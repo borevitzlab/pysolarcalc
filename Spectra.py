@@ -1,6 +1,6 @@
 import numpy as np
 from Solarpos import Solarpos
-from light_sim import SPO
+SPO = 1360.0
 
 DEGREES_TO_RADIANS = np.pi / 180.0
 RADIANS_TO_DEGREES = 180.0 / np.pi
@@ -56,6 +56,11 @@ class Spectra(object):
         self.assym = 0.65
 
     def calc_ozone(self):
+        """
+        calculates ozone density?
+
+        :rtype: float
+        """
         if self.ozone < 0:
             c1 = 100.0
             c2 = 1.5
@@ -79,9 +84,18 @@ class Spectra(object):
         return self.ozone
 
     def calc_all_spectral(self, solar_irradiance):
+        """
+        calculates the spectrum, integrated irradiation, spectral groups, total radiation, and total visible light
+
+        BROKEN, spectra are NAN
+
+        :param solar_irradiance: solar irradiance as calculated in light_sim.py
+        :return: tuple of spectrum, integrated irradiation, spectral groups, total radiation, and total visible light
+        :rtype: tuple[np.ndarray, np.ndarray, np.ndarray, float, float]
+        """
         assert not (self.units > 3 or self.units < 1), "units should be 1-3 not {}".format(self.units)
-        assert 0.0 < self.tau500 < 10.0, "tau500 should be within 0.0 to 10.0"
-        assert 0.0 <= self.assym <= 1.0
+        assert (0.0 <= self.tau500 <= 10.0), "tau500 should be within 0.0 to 10.0"
+        assert (0.0 <= self.assym <= 1.0), "assym should be between 0 and 1"
 
         # some magic numbers?
         grp1high, grp1low = 0, 13
@@ -365,6 +379,13 @@ class Spectra(object):
 
 
     def spectral2(self, solar_irradiance):
+        """
+        Should operate in the same way as SolarCalc/spectral.java:L25: S_spectral2
+
+        :param solar_irradiance: solar irradiance to drive calculation from
+        :return: numpy array of spectrum and integrated spectral radiation
+        """
+
         spec, integration, groups, trad, totvis = self.calc_all_spectral(solar_irradiance)
         # return matching wavelengths and their intensities, wl=spec[:,0], global irradiance=spec[:,4]
         return spec[:, [0, 4]]

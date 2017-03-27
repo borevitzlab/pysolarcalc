@@ -1,7 +1,6 @@
 import numpy as np
 import datetime
 from world_temp_sim import TempSim
-from functools import wraps
 from Spectra import Spectra
 iso8601 = "%Y-%m-%dT%H:%M:%S"
 
@@ -9,6 +8,7 @@ DEGREES_TO_RADIANS = np.pi / 180.0
 RADIANS_TO_DEGREES = 180.0 / np.pi
 # solar constant?
 SPO = 1360.0
+
 
 class LightSim(object):
     def __init__(self,
@@ -109,7 +109,6 @@ class LightSim(object):
                 daily_tradmax[day-1] = max(daily_tradmax[day-1], trad)
                 np.maximum(intmax, integration[:, 2], intmax)
         return daily_solarmax, daily_tradmax, intmax
-
 
     def fit_sine_temp_rh(self, maxtemp: float, mintemp: float) -> list:
         """

@@ -1,0 +1,748 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Light Sim &#8212; py-SolarCalc 3.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '3.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Temperature Simulator" href="world_temp_sim.html" />
+    <link rel="prev" title="py-SolarCalc" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">py-SolarCalc</a></h1>
+
+
+
+<p class="blurb">Software for Temperature, Relative Humidity and Solar Spectral Modeling.</p>
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=borevitzlab&repo=pysolarcalc&type=star&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Light Sim</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#spectra">Spectra</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#solarpos">SolarPos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="world_temp_sim.html">Temperature Simulator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">General Index</a></li>
+<li class="toctree-l1"><a class="reference internal" href="py-modindex.html">Module Index</a></li>
+</ul>
+
+
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Light Sim</a></li>
+<li><a class="reference internal" href="#spectra">Spectra</a></li>
+<li><a class="reference internal" href="#solarpos">SolarPos</a></li>
+</ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="light-sim">
+<h1>Light Sim<a class="headerlink" href="#light-sim" title="Permalink to this headline">§</a></h1>
+<p>Light Simulator/general calculator.</p>
+<p>TODO: spit the main calculator from this file and pass the data better</p>
+<span class="target" id="module-light_sim"></span><dl class="class">
+<dt id="light_sim.LightSim">
+<em class="property">class </em><code class="descclassname">light_sim.</code><code class="descname">LightSim</code><span class="sig-paren">(</span><em>latitude: float = 0.0</em>, <em>longitude: float = 90.0</em>, <em>elevation: float = 0.0</em>, <em>number_of_wls: int = 10</em>, <em>cesfit: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/light_sim.html#LightSim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#light_sim.LightSim" title="Permalink to this definition">§</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.5/library/functions.html#object" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dl class="method">
+<dt id="light_sim.LightSim.calc_half_day_length">
+<code class="descname">calc_half_day_length</code><span class="sig-paren">(</span><em>solar_declination: float</em><span class="sig-paren">)</span> &#x2192; float<a class="reference internal" href="_modules/light_sim.html#LightSim.calc_half_day_length"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#light_sim.LightSim.calc_half_day_length" title="Permalink to this definition">§</a></dt>
+<dd><p>Calculates 1/2 solar day length</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>solar_declination</strong> &#8211; solar declination</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">half a solar day</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.5/library/functions.html#float" title="(in Python v3.5)">float</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="light_sim.LightSim.calc_maxes">
+<code class="descname">calc_maxes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/light_sim.html#LightSim.calc_maxes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#light_sim.LightSim.calc_maxes" title="Permalink to this definition">§</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="light_sim.LightSim.calc_minutes">
+<code class="descname">calc_minutes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/light_sim.html#LightSim.calc_minutes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#light_sim.LightSim.calc_minutes" title="Permalink to this definition">§</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="light_sim.LightSim.calc_tao">
+<code class="descname">calc_tao</code><span class="sig-paren">(</span><em>dayofyear: int</em><span class="sig-paren">)</span> &#x2192; float<a class="reference internal" href="_modules/light_sim.html#LightSim.calc_tao"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#light_sim.LightSim.calc_tao" title="Permalink to this definition">§</a></dt>
+<dd><p>calculates tao from cloud cover (rain) and deltaT values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dayofyear</strong> &#8211; day of the year to calculate for.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">tao value</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.5/library/functions.html#float" title="(in Python v3.5)">float</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="light_sim.LightSim.diffuse_sky_irradiance">
+<code class="descname">diffuse_sky_irradiance</code><span class="sig-paren">(</span><em>pressure: float</em>, <em>zenith_angle: float</em><span class="sig-paren">)</span> &#x2192; float<a class="reference internal" href="_modules/light_sim.html#LightSim.diffuse_sky_irradiance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#light_sim.LightSim.diffuse_sky_irradiance" title="Permalink to this definition">§</a></dt>
+<dd><p>Diffuse sky irradiance on horizontal plane (Sd)
+calc using tao, m , and zangle.
+formula given in Campbell and Norman (1998)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>zenith_angle</strong> &#8211; zenith angle</li>
+<li><strong>pressure</strong> &#8211; air pressure</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">diffuse sky irradiance</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="light_sim.LightSim.equation_of_time_correction">
+<em class="property">static </em><code class="descname">equation_of_time_correction</code><span class="sig-paren">(</span><em>dayofyear: int</em><span class="sig-paren">)</span> &#x2192; float<a class="reference internal" href="_modules/light_sim.html#LightSim.equation_of_time_correction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#light_sim.LightSim.equation_of_time_correction" title="Permalink to this definition">§</a></dt>
+<dd><p>calculates equation of time correction typically a 15-20 minute correct depending on calendar day inputs</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dayofyear</strong> &#8211; day of the year</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body">int</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">eot correction</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.5/library/functions.html#float" title="(in Python v3.5)">float</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="light_sim.LightSim.fit_sine_temp_rh">
+<code class="descname">fit_sine_temp_rh</code><span class="sig-paren">(</span><em>maxtemp: float</em>, <em>mintemp: float</em><span class="sig-paren">)</span> &#x2192; list<a class="reference internal" href="_modules/light_sim.html#LightSim.fit_sine_temp_rh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#light_sim.LightSim.fit_sine_temp_rh" title="Permalink to this definition">§</a></dt>
+<dd><p>does the same as fit_temp_rh, but uses a sine wave rather than the solar days.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>mintemp</strong> &#8211; minimum temperature for the day</li>
+<li><strong>maxtemp</strong> &#8211; maximum temperature for the day</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="light_sim.LightSim.fit_temp_rh">
+<code class="descname">fit_temp_rh</code><span class="sig-paren">(</span><em>mintemp: float</em>, <em>maxtemp: float</em>, <em>tomorrow_min: float</em>, <em>sunrise: float</em>, <em>sunset: float</em><span class="sig-paren">)</span> &#x2192; list<a class="reference internal" href="_modules/light_sim.html#LightSim.fit_temp_rh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#light_sim.LightSim.fit_temp_rh" title="Permalink to this definition">§</a></dt>
+<dd><p>fits temperature and relative humidiy for a day given the maxtemp, mintemp and mintemp2
+also needs sunset and sunrise
+From Cesaraccio et al. 2001 Int.J. Biometeorol. 161-169</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>mintemp</strong> &#8211; minimum temperature for the day</li>
+<li><strong>maxtemp</strong> &#8211; maximum temperature for the day</li>
+<li><strong>tomorrow_min</strong> &#8211; tomorrows minimum temperature</li>
+<li><strong>sunset</strong> &#8211; sunset time (solar time?)</li>
+<li><strong>sunrise</strong> &#8211; sunrise time (solar time?)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">list of tuples with temperature,relative_humidity</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#list" title="(in Python v3.5)">list</a>(<a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#tuple" title="(in Python v3.5)">tuple</a>[<a class="reference external" href="https://docs.python.org/3.5/library/functions.html#float" title="(in Python v3.5)">float</a>,<a class="reference external" href="https://docs.python.org/3.5/library/functions.html#float" title="(in Python v3.5)">float</a>])</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="light_sim.LightSim.longitudal_correction">
+<code class="descname">longitudal_correction</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/light_sim.html#LightSim.longitudal_correction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#light_sim.LightSim.longitudal_correction" title="Permalink to this definition">§</a></dt>
+<dd><p>gets the longitudal correction
+assumes the self.longrad is in decimal format
+translates to 4 minutes/degree</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">longitudal correction value</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.5/library/functions.html#float" title="(in Python v3.5)">float</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="light_sim.LightSim.main_calc">
+<code class="descname">main_calc</code><span class="sig-paren">(</span><em>start</em>, <em>end</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/light_sim.html#LightSim.main_calc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#light_sim.LightSim.main_calc" title="Permalink to this definition">§</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="light_sim.LightSim.pressure">
+<code class="descname">pressure</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/light_sim.html#LightSim.pressure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#light_sim.LightSim.pressure" title="Permalink to this definition">§</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="light_sim.LightSim.read_weather_file">
+<code class="descname">read_weather_file</code><span class="sig-paren">(</span><em>fn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/light_sim.html#LightSim.read_weather_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#light_sim.LightSim.read_weather_file" title="Permalink to this definition">§</a></dt>
+<dd><p>fillout to read csv of rain, minairtemp, maxairtemp</p>
+<p>assign to the tempsims variables.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fn</strong> &#8211; filename</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="light_sim.LightSim.relative_humidity">
+<em class="property">static </em><code class="descname">relative_humidity</code><span class="sig-paren">(</span><em>mintemp: float</em>, <em>temp: float</em><span class="sig-paren">)</span> &#x2192; float<a class="reference internal" href="_modules/light_sim.html#LightSim.relative_humidity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#light_sim.LightSim.relative_humidity" title="Permalink to this definition">§</a></dt>
+<dd><p>calculates saturated water vapor concentration with a minimum temperature for the day and temperature.
+from FAO Allen, 1985 ??</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>mintemp</strong> &#8211; minumum temperature (C) for the day</li>
+<li><strong>temp</strong> &#8211; current temperature (C)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">estimated relative humidity</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3.5/library/functions.html#float" title="(in Python v3.5)">float</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="light_sim.LightSim.solar_declination">
+<em class="property">static </em><code class="descname">solar_declination</code><span class="sig-paren">(</span><em>dayofyear: int</em><span class="sig-paren">)</span> &#x2192; float<a class="reference internal" href="_modules/light_sim.html#LightSim.solar_declination"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#light_sim.LightSim.solar_declination" title="Permalink to this definition">§</a></dt>
+<dd><p>Calculate solar declination angle...
+formula from Campbell and Norman, 1998 [Eq. 11.2]
+corrected for day of year (Jan. 1 = 1, etc.)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dayofyear</strong> &#8211; day of the year</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body">int</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">solar declination angle</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.5/library/functions.html#float" title="(in Python v3.5)">float</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="light_sim.LightSim.stefan_boltzman_radiation_watts">
+<em class="property">static </em><code class="descname">stefan_boltzman_radiation_watts</code><span class="sig-paren">(</span><em>airtemp: float</em><span class="sig-paren">)</span> &#x2192; float<a class="reference internal" href="_modules/light_sim.html#LightSim.stefan_boltzman_radiation_watts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#light_sim.LightSim.stefan_boltzman_radiation_watts" title="Permalink to this definition">§</a></dt>
+<dd><p>Stefan-Boltzman law returns black body radiation in units of Watts/m2 emitted from body.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>airtemp</strong> &#8211; air temperature</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">watts/m2 radiation value</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.5/library/functions.html#float" title="(in Python v3.5)">float</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="light_sim.LightSim.zenith_angle">
+<code class="descname">zenith_angle</code><span class="sig-paren">(</span><em>solar_declination: float</em>, <em>time: float</em>, <em>solarnoon: float</em><span class="sig-paren">)</span> &#x2192; float<a class="reference internal" href="_modules/light_sim.html#LightSim.zenith_angle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#light_sim.LightSim.zenith_angle" title="Permalink to this definition">§</a></dt>
+<dd><p>calculates the zenith angle with regards to the solar declination, time and solar noon</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>solar_declination</strong> &#8211; </li>
+<li><strong>time</strong> &#8211; time for zenith</li>
+<li><strong>solarnoon</strong> &#8211; solar noon value</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">zenith angle</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3.5/library/functions.html#float" title="(in Python v3.5)">float</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="spectra">
+<h1>Spectra<a class="headerlink" href="#spectra" title="Permalink to this headline">§</a></h1>
+<p>Spectra simulator, takes data from light_sim, creates a SolarPos instance to calculate sun parameters and then calculates solar spectra
+<em>WIP</em></p>
+<span class="target" id="module-Spectra"></span><dl class="class">
+<dt id="Spectra.Spectra">
+<em class="property">class </em><code class="descclassname">Spectra.</code><code class="descname">Spectra</code><a class="reference internal" href="_modules/Spectra.html#Spectra"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Spectra.Spectra" title="Permalink to this definition">§</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.5/library/functions.html#object" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dl class="method">
+<dt id="Spectra.Spectra.calcLEDIntensity">
+<code class="descname">calcLEDIntensity</code><span class="sig-paren">(</span><em>i</em>, <em>intensity_total</em>, <em>intensity_max</em>, <em>multiplier=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Spectra.html#Spectra.calcLEDIntensity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Spectra.Spectra.calcLEDIntensity" title="Permalink to this definition">§</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="Spectra.Spectra.calc_all_spectral">
+<code class="descname">calc_all_spectral</code><span class="sig-paren">(</span><em>solar_irradiance</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Spectra.html#Spectra.calc_all_spectral"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Spectra.Spectra.calc_all_spectral" title="Permalink to this definition">§</a></dt>
+<dd><p>calculates the spectrum, integrated irradiation, spectral groups, total radiation, and total visible light</p>
+<p>BROKEN, spectra are NAN</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>solar_irradiance</strong> &#8211; solar irradiance as calculated in light_sim.py</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">tuple of spectrum, integrated irradiation, spectral groups, total radiation, and total visible light</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#tuple" title="(in Python v3.5)">tuple</a>[np.ndarray, np.ndarray, np.ndarray, <a class="reference external" href="https://docs.python.org/3.5/library/functions.html#float" title="(in Python v3.5)">float</a>, <a class="reference external" href="https://docs.python.org/3.5/library/functions.html#float" title="(in Python v3.5)">float</a>]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Spectra.Spectra.calc_leds">
+<code class="descname">calc_leds</code><span class="sig-paren">(</span><em>solar_irradiance</em>, <em>total_solar_irradiance_daily_max</em>, <em>total_integrated_solar_irradiance_max</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Spectra.html#Spectra.calc_leds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Spectra.Spectra.calc_leds" title="Permalink to this definition">§</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="Spectra.Spectra.calc_ozone">
+<code class="descname">calc_ozone</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/Spectra.html#Spectra.calc_ozone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Spectra.Spectra.calc_ozone" title="Permalink to this definition">§</a></dt>
+<dd><p>calculates ozone density?</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.5/library/functions.html#float" title="(in Python v3.5)">float</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Spectra.Spectra.spectral2">
+<code class="descname">spectral2</code><span class="sig-paren">(</span><em>solar_irradiance</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Spectra.html#Spectra.spectral2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Spectra.Spectra.spectral2" title="Permalink to this definition">§</a></dt>
+<dd><p>Should operate in the same way as SolarCalc/spectral.java:L25: S_spectral2</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>solar_irradiance</strong> &#8211; solar irradiance to drive calculation from</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">numpy array of spectrum and integrated spectral radiation</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="solarpos">
+<h1>SolarPos<a class="headerlink" href="#solarpos" title="Permalink to this headline">§</a></h1>
+<p>Solar position, refraction, irradiation calculator.</p>
+<span class="target" id="module-Solarpos"></span><dl class="class">
+<dt id="Solarpos.Solarpos">
+<em class="property">class </em><code class="descclassname">Solarpos.</code><code class="descname">Solarpos</code><span class="sig-paren">(</span><em>latitude</em>, <em>longitude</em>, <em>year</em>, <em>dayofyear=None</em>, <em>month=None</em>, <em>day=None</em>, <em>hour=None</em>, <em>minute=None</em>, <em>second=None</em>, <em>interval=0.0</em>, <em>timezone=None</em>, <em>temp=None</em>, <em>tilt=None</em>, <em>aspect=None</em>, <em>press=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Solarpos.html#Solarpos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Solarpos.Solarpos" title="Permalink to this definition">§</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.5/library/functions.html#object" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.amass">
+<code class="descname">amass</code><a class="headerlink" href="#Solarpos.Solarpos.amass" title="Permalink to this definition">§</a></dt>
+<dd><p>Airmass Kasten, F. and Young, A. 1989. Revised optical air mass tables
+and approximation formula. Applied Optics 28 (22), pp. 4735-4738</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.ampress">
+<code class="descname">ampress</code><a class="headerlink" href="#Solarpos.Solarpos.ampress" title="Permalink to this definition">§</a></dt>
+<dd><p>Airmass Kasten, F. and Young, A. 1989. Revised optical air mass tables
+and approximation formula. Applied Optics 28 (22), pp. 4735-4738</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.aspect">
+<code class="descname">aspect</code><a class="headerlink" href="#Solarpos.Solarpos.aspect" title="Permalink to this definition">§</a></dt>
+<dd><p>Azimuth of panel surface (direction it faces)
+N=0, E=90, S=180, W=270</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="Solarpos.Solarpos.calc_geometry">
+<code class="descname">calc_geometry</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/Solarpos.html#Solarpos.calc_geometry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Solarpos.Solarpos.calc_geometry" title="Permalink to this definition">§</a></dt>
+<dd><p>Day Angle
+Iqbal, M. 1983. An Introduction to Solar Radiation. Academic
+Press, NY., page 3</p>
+<p>Earth radius vector * solar constant = solar energy
+Spencer, J. W. 1971. Fourier series representation of the
+position of the sun. Search 2 (5), page 172</p>
+<p>Universal Coordinated (Greenwich standard)
+Michalsky, J. 1988. The Astronomical Almanac&#8217;s algorithm for
+approximate solar position (1950-2050). Solar Energy 40 (3), pp. 227-235.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.cosinc">
+<code class="descname">cosinc</code><a class="headerlink" href="#Solarpos.Solarpos.cosinc" title="Permalink to this definition">§</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.coszen">
+<code class="descname">coszen</code><a class="headerlink" href="#Solarpos.Solarpos.coszen" title="Permalink to this definition">§</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.dayofmonth">
+<code class="descname">dayofmonth</code><a class="headerlink" href="#Solarpos.Solarpos.dayofmonth" title="Permalink to this definition">§</a></dt>
+<dd><p>day of month, (May 27 = 27, etc)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.dayofyear">
+<code class="descname">dayofyear</code><a class="headerlink" href="#Solarpos.Solarpos.dayofyear" title="Permalink to this definition">§</a></dt>
+<dd><p>Day number (day of year; Feb 1 = 32 )</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.elevetr">
+<code class="descname">elevetr</code><a class="headerlink" href="#Solarpos.Solarpos.elevetr" title="Permalink to this definition">§</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.elevref">
+<code class="descname">elevref</code><a class="headerlink" href="#Solarpos.Solarpos.elevref" title="Permalink to this definition">§</a></dt>
+<dd><p>Refraction correction, degrees Zimmerman, John C. 1981. Sun-pointing
+programs and their accuracy. SAND81-0761, Experimental Systems Operation
+Division 4721, Sandia National Laboratories, Albuquerque, NM.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.erv">
+<code class="descname">erv</code><a class="headerlink" href="#Solarpos.Solarpos.erv" title="Permalink to this definition">§</a></dt>
+<dd><p>Earth radius vector (multiplied to solar constant)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.etr">
+<code class="descname">etr</code><a class="headerlink" href="#Solarpos.Solarpos.etr" title="Permalink to this definition">§</a></dt>
+<dd><p>Extraterrestrial (top-of-atmosphere) solar irradiance</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.etr_tilt">
+<code class="descname">etr_tilt</code><a class="headerlink" href="#Solarpos.Solarpos.etr_tilt" title="Permalink to this definition">§</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.etrn">
+<code class="descname">etrn</code><a class="headerlink" href="#Solarpos.Solarpos.etrn" title="Permalink to this definition">§</a></dt>
+<dd><p>Extraterrestrial (top-of-atmosphere) solar irradiance</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.hour">
+<code class="descname">hour</code><a class="headerlink" href="#Solarpos.Solarpos.hour" title="Permalink to this definition">§</a></dt>
+<dd><p>hour of day, 0-23</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.interval">
+<code class="descname">interval</code><a class="headerlink" href="#Solarpos.Solarpos.interval" title="Permalink to this definition">§</a></dt>
+<dd><p>instantaneous measurement interval</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.latitude">
+<code class="descname">latitude</code><a class="headerlink" href="#Solarpos.Solarpos.latitude" title="Permalink to this definition">§</a></dt>
+<dd><p>latitude, degrees north (south negative)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.longitude">
+<code class="descname">longitude</code><a class="headerlink" href="#Solarpos.Solarpos.longitude" title="Permalink to this definition">§</a></dt>
+<dd><p>longitude, degrees east (west negative)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.minute">
+<code class="descname">minute</code><a class="headerlink" href="#Solarpos.Solarpos.minute" title="Permalink to this definition">§</a></dt>
+<dd><p>minute of hour (0-59)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.month">
+<code class="descname">month</code><a class="headerlink" href="#Solarpos.Solarpos.month" title="Permalink to this definition">§</a></dt>
+<dd><p>Month number 1-12</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.press">
+<code class="descname">press</code><a class="headerlink" href="#Solarpos.Solarpos.press" title="Permalink to this definition">§</a></dt>
+<dd><p>Surface pressure, millibars</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.prime">
+<code class="descname">prime</code><a class="headerlink" href="#Solarpos.Solarpos.prime" title="Permalink to this definition">§</a></dt>
+<dd><p>Prime and Unprime Prime converts Kt to normalized Kt&#8217;, etc.
+Unprime deconverts Kt&#8217; to Kt, etc.
+Perez, R., P. Ineichen, Seals, R., &amp; Zelenka,
+A. 1990. Making full use of the clearness index for parameterizing hourly insolation conditions.
+Solar Energy 45 (2), pp. 111-114</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="Solarpos.Solarpos.reset">
+<code class="descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/Solarpos.html#Solarpos.reset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Solarpos.Solarpos.reset" title="Permalink to this definition">§</a></dt>
+<dd><p>resets the internal state for recalculation.
+:return:</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.sazm">
+<code class="descname">sazm</code><a class="headerlink" href="#Solarpos.Solarpos.sazm" title="Permalink to this definition">§</a></dt>
+<dd><p>Solar azimuth angle Iqbal, M. 1983. An Introduction to Solar Radiation.
+Academic Press, NY., page 15</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.sbcf">
+<code class="descname">sbcf</code><a class="headerlink" href="#Solarpos.Solarpos.sbcf" title="Permalink to this definition">§</a></dt>
+<dd><p>Shadowband correction factor Drummond, A. J. 1956. A contribution to
+absolute pyrheliometry. Q. J. R. Meteorol. Soc. 82, pp. 481-493</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.sbrad">
+<code class="descname">sbrad</code><a class="headerlink" href="#Solarpos.Solarpos.sbrad" title="Permalink to this definition">§</a></dt>
+<dd><p>Eppley shadow band radius</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.sbsky">
+<code class="descname">sbsky</code><a class="headerlink" href="#Solarpos.Solarpos.sbsky" title="Permalink to this definition">§</a></dt>
+<dd><p>Drummond factor for partly cloudy skies</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.sbwid">
+<code class="descname">sbwid</code><a class="headerlink" href="#Solarpos.Solarpos.sbwid" title="Permalink to this definition">§</a></dt>
+<dd><p>Eppley shadow band width</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.second">
+<code class="descname">second</code><a class="headerlink" href="#Solarpos.Solarpos.second" title="Permalink to this definition">§</a></dt>
+<dd><p>Second of minute, 0 - 59</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.solcon">
+<code class="descname">solcon</code><a class="headerlink" href="#Solarpos.Solarpos.solcon" title="Permalink to this definition">§</a></dt>
+<dd><p>Solar constant, 1367 W/sq m</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.srss">
+<code class="descname">srss</code><a class="headerlink" href="#Solarpos.Solarpos.srss" title="Permalink to this definition">§</a></dt>
+<dd><p>Sunrise and sunset times (minutes from midnight)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.ssha">
+<code class="descname">ssha</code><a class="headerlink" href="#Solarpos.Solarpos.ssha" title="Permalink to this definition">§</a></dt>
+<dd><p>Sunset hour angle, degrees Iqbal, M. 1983. An Introduction to Solar
+Radiation. Academic Press, NY., page 16</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.temp">
+<code class="descname">temp</code><a class="headerlink" href="#Solarpos.Solarpos.temp" title="Permalink to this definition">§</a></dt>
+<dd><p>Ambient dry-bulb temperature, degrees C</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.tilt">
+<code class="descname">tilt</code><a class="headerlink" href="#Solarpos.Solarpos.tilt" title="Permalink to this definition">§</a></dt>
+<dd><p>Degrees tilt from horizontal of panel</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.timezone">
+<code class="descname">timezone</code><a class="headerlink" href="#Solarpos.Solarpos.timezone" title="Permalink to this definition">§</a></dt>
+<dd><p>Time zone, east (west negative).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.tst">
+<code class="descname">tst</code><a class="headerlink" href="#Solarpos.Solarpos.tst" title="Permalink to this definition">§</a></dt>
+<dd><p>TST . True Solar Time = local standard time + TSTfix, time in minutes
+from midnight. Iqbal, M. 1983. An Introduction to Solar Radiation.
+Academic Press, NY., page 13</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.tstfix">
+<code class="descname">tstfix</code><a class="headerlink" href="#Solarpos.Solarpos.tstfix" title="Permalink to this definition">§</a></dt>
+<dd><p>see above</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.year">
+<code class="descname">year</code><a class="headerlink" href="#Solarpos.Solarpos.year" title="Permalink to this definition">§</a></dt>
+<dd><p>4 digit year</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.zenetr">
+<code class="descname">zenetr</code><a class="headerlink" href="#Solarpos.Solarpos.zenetr" title="Permalink to this definition">§</a></dt>
+<dd><p>ETR solar zenith angle Iqbal, M. 1983. An Introduction to Solar
+Radiation. Academic Press, NY., page 15</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Solarpos.Solarpos.zenref">
+<code class="descname">zenref</code><a class="headerlink" href="#Solarpos.Solarpos.zenref" title="Permalink to this definition">§</a></dt>
+<dd><p>Refraction correction, degrees Zimmerman, John C. 1981. Sun-pointing
+programs and their accuracy. SAND81-0761, Experimental Systems Operation
+Division 4721, Sandia National Laboratories, Albuquerque, NM.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="Solarpos.cached">
+<code class="descclassname">Solarpos.</code><code class="descname">cached</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Solarpos.html#cached"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Solarpos.cached" title="Permalink to this definition">§</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2016, Kurt Spokas, Gareth Dunstone.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

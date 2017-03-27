@@ -1,0 +1,810 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Solarpos &#8212; py-SolarCalc 3.2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '3.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">py-SolarCalc</a></h1>
+
+
+
+<p class="blurb">Software for Temperature, Relative Humidity and Solar Spectral Modeling.</p>
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=borevitzlab&repo=pysolarcalc&type=star&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../light_sim.html">Light Sim</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../light_sim.html#spectra">Spectra</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../light_sim.html#solarpos">SolarPos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../world_temp_sim.html">Temperature Simulator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">General Index</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../py-modindex.html">Module Index</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for Solarpos</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">wraps</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+
+<span class="n">DEGREES_TO_RADIANS</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">180.0</span>
+<span class="n">RADIANS_TO_DEGREES</span> <span class="o">=</span> <span class="mf">180.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+
+
+<div class="viewcode-block" id="cached"><a class="viewcode-back" href="../light_sim.html#Solarpos.cached">[docs]</a><span class="k">def</span> <span class="nf">cached</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">attrname</span> <span class="o">=</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">f</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrname</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrname</span><span class="p">)</span>
+        <span class="n">attr_val</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrname</span><span class="p">,</span> <span class="n">attr_val</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">attr_val</span>
+    <span class="k">return</span> <span class="n">wrapper</span></div>
+
+
+<div class="viewcode-block" id="Solarpos"><a class="viewcode-back" href="../light_sim.html#Solarpos.Solarpos">[docs]</a><span class="k">class</span> <span class="nc">Solarpos</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">latitude</span><span class="p">,</span>
+                 <span class="n">longitude</span><span class="p">,</span>
+                 <span class="n">year</span><span class="p">,</span>
+                 <span class="n">dayofyear</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">month</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">day</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">hour</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">minute</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">second</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">interval</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                 <span class="n">timezone</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">temp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">tilt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">aspect</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">press</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_interval</span> <span class="o">=</span> <span class="n">interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_year</span> <span class="o">=</span> <span class="n">year</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_month</span> <span class="o">=</span> <span class="n">month</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hour</span> <span class="o">=</span> <span class="n">hour</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_minute</span> <span class="o">=</span> <span class="n">minute</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_second</span> <span class="o">=</span> <span class="n">second</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_timezone</span> <span class="o">=</span> <span class="n">timezone</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dayofyear</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dayofmonth</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">dayofyear</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dayofyear</span> <span class="o">=</span> <span class="n">dayofyear</span>
+        <span class="k">if</span> <span class="n">day</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">month</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dayofmonth</span> <span class="o">=</span> <span class="n">day</span><span class="p">,</span> <span class="n">month</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_latitude</span> <span class="o">=</span> <span class="n">latitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_longitude</span> <span class="o">=</span> <span class="n">longitude</span>
+
+        <span class="c1"># private attributes for property access</span>
+        <span class="c1"># these are just set to defaults</span>
+        <span class="c1"># changing them through the property interface should reset all calculatiuons and cached properties</span>
+        <span class="c1">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_solcon</span> <span class="o">=</span> <span class="mf">1367.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_press</span> <span class="o">=</span> <span class="mf">1013.0</span> <span class="k">if</span> <span class="n">press</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">press</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_temp</span> <span class="o">=</span> <span class="mf">15.0</span> <span class="k">if</span> <span class="n">temp</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">temp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tilt</span> <span class="o">=</span> <span class="o">-</span><span class="mf">10.0</span> <span class="k">if</span> <span class="n">tilt</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tilt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_timezone</span> <span class="o">=</span> <span class="o">-</span><span class="mf">99.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sbwid</span> <span class="o">=</span> <span class="mf">7.6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sbrad</span> <span class="o">=</span> <span class="mf">31.7</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sbsky</span> <span class="o">=</span> <span class="mf">0.04</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_aspect</span> <span class="o">=</span> <span class="mf">180.0</span> <span class="k">if</span> <span class="n">aspect</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">aspect</span>
+
+        <span class="c1"># more private attributes, these are all initialised to None, and will be cached on access</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_zenetr</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_zenref</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_erv</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_etr</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_etrn</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_elevetr</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_elevref</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_coszen</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sazm</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ssha</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_srss</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sbcf</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_daynum</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_declin</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hrang</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">utime</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># initial geometry calc, to get trig data.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calc_geometry</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">trigdata</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">cd</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_declin</span><span class="p">),</span>
+            <span class="n">ch</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hrang</span><span class="p">),</span>
+            <span class="n">cl</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">latitude</span><span class="p">),</span>
+            <span class="n">sd</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_declin</span><span class="p">),</span>
+            <span class="n">sl</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">latitude</span><span class="p">)</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="Solarpos.reset"><a class="viewcode-back" href="../light_sim.html#Solarpos.Solarpos.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        resets the internal state for recalculation.</span>
+<span class="sd">        :return:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_zenetr</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_zenref</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_erv</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_etr</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_etrn</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_elevetr</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_elevref</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_coszen</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sazm</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ssha</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_srss</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sbcf</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_daynum</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_declin</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hrang</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">utime</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calc_geometry</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">trigdata</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">cd</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_declin</span><span class="p">),</span>
+            <span class="n">ch</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hrang</span><span class="p">),</span>
+            <span class="n">cl</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">latitude</span><span class="p">),</span>
+            <span class="n">sd</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_declin</span><span class="p">),</span>
+            <span class="n">sl</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">latitude</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="Solarpos.calc_geometry"><a class="viewcode-back" href="../light_sim.html#Solarpos.Solarpos.calc_geometry">[docs]</a>    <span class="k">def</span> <span class="nf">calc_geometry</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Day Angle</span>
+<span class="sd">        Iqbal, M. 1983. An Introduction to Solar Radiation. Academic</span>
+<span class="sd">        Press, NY., page 3</span>
+
+<span class="sd">        Earth radius vector * solar constant = solar energy</span>
+<span class="sd">        Spencer, J. W. 1971. Fourier series representation of the</span>
+<span class="sd">        position of the sun. Search 2 (5), page 172</span>
+
+<span class="sd">        Universal Coordinated (Greenwich standard)</span>
+<span class="sd">        Michalsky, J. 1988. The Astronomical Almanac&#39;s algorithm for</span>
+<span class="sd">        approximate solar position (1950-2050). Solar Energy 40 (3), pp. 227-235.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dayang</span> <span class="o">=</span> <span class="mf">360.0</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dayofyear</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">365.0</span>
+
+        <span class="n">sd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="n">dayang</span><span class="p">)</span>
+        <span class="n">cd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="n">dayang</span><span class="p">)</span>
+        <span class="n">d2</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">dayang</span>
+        <span class="n">c2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="n">d2</span><span class="p">)</span>
+        <span class="n">s2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="n">d2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_erv</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.000110</span> <span class="o">+</span> <span class="mf">0.034221</span> <span class="o">*</span> <span class="n">cd</span> <span class="o">+</span> <span class="mf">0.001280</span> <span class="o">*</span> <span class="n">sd</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mf">0.000719</span> <span class="o">*</span> <span class="n">c2</span> <span class="o">+</span> <span class="mf">0.000077</span> <span class="o">*</span> <span class="n">s2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">utime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hour</span> <span class="o">*</span> <span class="mi">3600</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">minute</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">second</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span> <span class="o">/</span> <span class="mf">2.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">utime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">utime</span> <span class="o">/</span> <span class="mi">3600</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">timezone</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">year</span> <span class="o">-</span> <span class="mi">1949</span>
+        <span class="n">leap</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">delta</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="n">julday</span> <span class="o">=</span> <span class="mf">32916.5</span> <span class="o">+</span> <span class="n">delta</span> <span class="o">*</span> <span class="mf">365.0</span> <span class="o">+</span> <span class="n">leap</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dayofyear</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">utime</span> <span class="o">/</span> <span class="mf">24.0</span>
+        <span class="n">ecliptic_time</span> <span class="o">=</span> <span class="n">julday</span> <span class="o">-</span> <span class="mf">51545.0</span>
+        <span class="n">mean_longitude</span> <span class="o">=</span> <span class="mf">280.460</span> <span class="o">+</span> <span class="mf">0.9856474</span> <span class="o">*</span> <span class="n">ecliptic_time</span>
+        <span class="n">mean_longitude</span> <span class="o">-=</span> <span class="mf">360.0</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">mean_longitude</span> <span class="o">/</span> <span class="mf">360.0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mean_longitude</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">mean_longitude</span> <span class="o">+=</span> <span class="mi">360</span>
+        <span class="n">mean_anomaly</span> <span class="o">=</span> <span class="mf">357.528</span> <span class="o">+</span> <span class="mf">0.9856003</span> <span class="o">*</span> <span class="n">ecliptic_time</span>
+        <span class="n">mean_anomaly</span> <span class="o">-=</span> <span class="mf">360.0</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">mean_anomaly</span> <span class="o">/</span> <span class="mf">360.0</span><span class="p">)</span>
+        <span class="n">ecliptic_longitude</span> <span class="o">=</span> <span class="n">mean_longitude</span> <span class="o">+</span> <span class="mf">1.915</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">mean_anomaly</span> <span class="o">*</span> <span class="n">RADIANS_TO_DEGREES</span><span class="p">)</span>
+        <span class="n">ecliptic_longitude</span> <span class="o">+=</span> <span class="mf">0.020</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">mean_anomaly</span> <span class="o">*</span> <span class="n">RADIANS_TO_DEGREES</span><span class="p">)</span>
+        <span class="n">ecliptic_longitude</span> <span class="o">-=</span> <span class="mi">360</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">ecliptic_longitude</span> <span class="o">/</span> <span class="mi">360</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ecliptic_longitude</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">ecliptic_longitude</span> <span class="o">+=</span> <span class="mi">360</span>
+        <span class="n">ecliptic_obliquity</span> <span class="o">=</span> <span class="mf">23.439</span> <span class="o">-</span> <span class="mf">4.0e-07</span> <span class="o">*</span> <span class="n">ecliptic_time</span>
+        <span class="n">v1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">ecliptic_obliquity</span> <span class="o">*</span> <span class="n">RADIANS_TO_DEGREES</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">ecliptic_longitude</span> <span class="o">*</span> <span class="n">RADIANS_TO_DEGREES</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_declin</span> <span class="o">=</span> <span class="n">DEGREES_TO_RADIANS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">v1</span><span class="p">)</span>
+
+        <span class="n">top</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="n">ecliptic_obliquity</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="n">ecliptic_longitude</span><span class="p">)</span>
+        <span class="n">bottom</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="n">ecliptic_longitude</span><span class="p">)</span>
+        <span class="n">rascen</span> <span class="o">=</span> <span class="n">DEGREES_TO_RADIANS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">top</span><span class="p">,</span> <span class="n">bottom</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">rascen</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">rascen</span> <span class="o">+=</span> <span class="mf">360.0</span>
+
+        <span class="n">gmst</span> <span class="o">=</span> <span class="mf">6.697375</span> <span class="o">+</span> <span class="mf">0.0657098242</span> <span class="o">*</span> <span class="n">ecliptic_time</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">utime</span>
+        <span class="n">gmst</span> <span class="o">-=</span> <span class="mf">24.0</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">gmst</span> <span class="o">/</span> <span class="mf">24.0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">gmst</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">gmst</span> <span class="o">+=</span> <span class="mf">24.0</span>
+
+        <span class="n">lmst</span> <span class="o">=</span> <span class="n">gmst</span> <span class="o">*</span> <span class="mf">15.0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">longitude</span>
+        <span class="n">lmst</span> <span class="o">-=</span> <span class="mf">360.0</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">lmst</span> <span class="o">/</span> <span class="mf">360.0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lmst</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">lmst</span> <span class="o">+=</span> <span class="mf">360.0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hrang</span> <span class="o">=</span> <span class="n">lmst</span> <span class="o">-</span> <span class="n">rascen</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hrang</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">180.0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_hrang</span> <span class="o">+=</span> <span class="mf">360.0</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hrang</span> <span class="o">&gt;</span> <span class="mf">180.0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_hrang</span> <span class="o">-=</span> <span class="mf">360.0</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">erv</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Earth radius vector (multiplied to solar constant)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_erv</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@cached</span>
+    <span class="k">def</span> <span class="nf">zenetr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ETR solar zenith angle Iqbal, M. 1983. An Introduction to Solar</span>
+<span class="sd">        Radiation. Academic Press, NY., page 15</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigdata</span><span class="p">[</span><span class="s1">&#39;sl&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigdata</span><span class="p">[</span><span class="s1">&#39;cd&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigdata</span><span class="p">[</span><span class="s1">&#39;cl&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigdata</span><span class="p">[</span><span class="s1">&#39;ch&#39;</span><span class="p">]</span>
+        <span class="c1"># watch out for the roundoff errors</span>
+        <span class="n">cz</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">cz</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">)</span>
+
+        <span class="n">zenetr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">cz</span><span class="p">)</span> <span class="o">*</span> <span class="n">DEGREES_TO_RADIANS</span>
+        <span class="c1"># limit the degrees below the horizon to 9 [+90 . 99]</span>
+        <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">zenetr</span><span class="p">,</span> <span class="mf">99.0</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@cached</span>
+    <span class="k">def</span> <span class="nf">zenref</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Refraction correction, degrees Zimmerman, John C. 1981. Sun-pointing</span>
+<span class="sd">        programs and their accuracy. SAND81-0761, Experimental Systems Operation</span>
+<span class="sd">        Division 4721, Sandia National Laboratories, Albuquerque, NM.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">refcor</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="c1"># If the sun is near zenith, the algorithm bombs; refraction near 0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">elevetr</span> <span class="o">&lt;=</span> <span class="mf">85.0</span><span class="p">:</span>
+            <span class="n">tanelev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">elevetr</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">elevetr</span> <span class="o">&gt;=</span> <span class="mf">5.0</span><span class="p">:</span>
+                <span class="n">refcor</span> <span class="o">=</span> <span class="mf">58.1</span> <span class="o">/</span> <span class="n">tanelev</span> <span class="o">-</span> <span class="mf">0.07</span> <span class="o">/</span> <span class="p">(</span><span class="nb">pow</span><span class="p">(</span><span class="n">tanelev</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mf">0.000086</span> <span class="o">/</span> <span class="p">(</span><span class="nb">pow</span><span class="p">(</span><span class="n">tanelev</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">elevetr</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="mf">0.575</span><span class="p">:</span>
+                <span class="n">refcor</span> <span class="o">=</span> <span class="mf">1735.0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">elevetr</span> <span class="o">*</span> <span class="p">(</span>
+                    <span class="o">-</span><span class="mf">518.2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">elevetr</span> <span class="o">*</span> <span class="p">(</span><span class="mf">103.4</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">elevetr</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mf">12.79</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">elevetr</span> <span class="o">*</span> <span class="mf">0.711</span><span class="p">)))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">refcor</span> <span class="o">=</span> <span class="o">-</span><span class="mf">20.774</span> <span class="o">/</span> <span class="n">tanelev</span>
+            <span class="n">prestemp</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">press</span> <span class="o">*</span> <span class="mf">283.0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1013.0</span> <span class="o">*</span> <span class="p">(</span><span class="mf">273.0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">temp</span><span class="p">))</span>
+            <span class="n">refcor</span> <span class="o">*=</span> <span class="n">prestemp</span> <span class="o">/</span> <span class="mf">3600.0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_elevref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">elevetr</span> <span class="o">+</span> <span class="n">refcor</span>
+        <span class="k">return</span> <span class="mf">90.0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elevref</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@cached</span>
+    <span class="k">def</span> <span class="nf">elevetr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mf">90.0</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zenetr</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@cached</span>
+    <span class="k">def</span> <span class="nf">elevref</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Refraction correction, degrees Zimmerman, John C. 1981. Sun-pointing</span>
+<span class="sd">        programs and their accuracy. SAND81-0761, Experimental Systems Operation</span>
+<span class="sd">        Division 4721, Sandia National Laboratories, Albuquerque, NM.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">refcor</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="c1"># If the sun is near zenith, the algorithm bombs; refraction near 0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">elevetr</span> <span class="o">&lt;=</span> <span class="mf">85.0</span><span class="p">:</span>
+            <span class="n">tanelev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">elevetr</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">elevetr</span> <span class="o">&gt;=</span> <span class="mf">5.0</span><span class="p">:</span>
+                <span class="n">refcor</span> <span class="o">=</span> <span class="mf">58.1</span> <span class="o">/</span> <span class="n">tanelev</span> <span class="o">-</span> <span class="mf">0.07</span> <span class="o">/</span> <span class="p">(</span><span class="nb">pow</span><span class="p">(</span><span class="n">tanelev</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mf">0.000086</span> <span class="o">/</span> <span class="p">(</span><span class="nb">pow</span><span class="p">(</span><span class="n">tanelev</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">elevetr</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="mf">0.575</span><span class="p">:</span>
+                <span class="n">refcor</span> <span class="o">=</span> <span class="mf">1735.0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">elevetr</span> <span class="o">*</span> <span class="p">(</span>
+                    <span class="o">-</span><span class="mf">518.2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">elevetr</span> <span class="o">*</span> <span class="p">(</span><span class="mf">103.4</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">elevetr</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mf">12.79</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">elevetr</span> <span class="o">*</span> <span class="mf">0.711</span><span class="p">)))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">refcor</span> <span class="o">=</span> <span class="o">-</span><span class="mf">20.774</span> <span class="o">/</span> <span class="n">tanelev</span>
+            <span class="n">prestemp</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">press</span> <span class="o">*</span> <span class="mf">283.0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1013.0</span> <span class="o">*</span> <span class="p">(</span><span class="mf">273.0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">temp</span><span class="p">))</span>
+            <span class="n">refcor</span> <span class="o">*=</span> <span class="n">prestemp</span> <span class="o">/</span> <span class="mf">3600.0</span>
+
+        <span class="n">elevref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">elevetr</span> <span class="o">+</span> <span class="n">refcor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_zenref</span> <span class="o">=</span> <span class="mf">90.0</span> <span class="o">-</span> <span class="n">elevref</span>
+        <span class="k">return</span> <span class="n">elevref</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@cached</span>
+    <span class="k">def</span> <span class="nf">ssha</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sunset hour angle, degrees Iqbal, M. 1983. An Introduction to Solar</span>
+<span class="sd">        Radiation. Academic Press, NY., page 16</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">cdcl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigdata</span><span class="p">[</span><span class="s1">&#39;cd&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigdata</span><span class="p">[</span><span class="s1">&#39;cl&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">cdcl</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mf">0.001</span><span class="p">:</span>
+            <span class="n">cssha</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">trigdata</span><span class="p">[</span><span class="s1">&#39;sl&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigdata</span><span class="p">[</span><span class="s1">&#39;sd&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">cdcl</span>
+
+            <span class="c1"># This keeps the cosine from blowing on roundoff * /</span>
+            <span class="k">if</span> <span class="n">cssha</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">:</span>
+                <span class="n">ssha</span> <span class="o">=</span> <span class="mf">180.0</span>
+            <span class="k">elif</span> <span class="n">cssha</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_ssha</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_ssha</span> <span class="o">=</span> <span class="n">DEGREES_TO_RADIANS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">cssha</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="p">(((</span><span class="bp">self</span><span class="o">.</span><span class="n">_declin</span> <span class="o">&gt;=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latitude</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">))</span> <span class="ow">or</span>
+                  <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_declin</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latitude</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">))):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ssha</span> <span class="o">=</span> <span class="mf">180.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ssha</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ssha</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@cached</span>
+    <span class="k">def</span> <span class="nf">sbcf</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shadowband correction factor Drummond, A. J. 1956. A contribution to</span>
+<span class="sd">        absolute pyrheliometry. Q. J. R. Meteorol. Soc. 82, pp. 481-493</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="mf">0.6366198</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sbwid</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sbrad</span> <span class="o">*</span> <span class="nb">pow</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trigdata</span><span class="p">[</span><span class="s1">&#39;cd&#39;</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">t1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigdata</span><span class="p">[</span><span class="s1">&#39;sl&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigdata</span><span class="p">[</span><span class="s1">&#39;sd&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ssha</span> <span class="o">*</span> <span class="n">RADIANS_TO_DEGREES</span>
+        <span class="n">t2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigdata</span><span class="p">[</span><span class="s1">&#39;cl&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigdata</span><span class="p">[</span><span class="s1">&#39;cd&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ssha</span> <span class="o">*</span> <span class="n">RADIANS_TO_DEGREES</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sbsky</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">p</span> <span class="o">*</span> <span class="p">(</span><span class="n">t1</span> <span class="o">+</span> <span class="n">t2</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@cached</span>
+    <span class="k">def</span> <span class="nf">tst</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        TST . True Solar Time = local standard time + TSTfix, time in minutes</span>
+<span class="sd">        from midnight. Iqbal, M. 1983. An Introduction to Solar Radiation.</span>
+<span class="sd">        Academic Press, NY., page 13</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mi">180</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hrang</span><span class="p">)</span> <span class="o">*</span> <span class="mf">4.0</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@cached</span>
+    <span class="k">def</span> <span class="nf">tstfix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        see above</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">tstfix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tst</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">hour</span> <span class="o">*</span> <span class="mi">50</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">minute</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">second</span> <span class="o">/</span> <span class="mf">60.0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span> <span class="o">/</span> <span class="mf">120.0</span>
+        <span class="k">while</span> <span class="n">tstfix</span> <span class="o">&gt;</span> <span class="mi">720</span><span class="p">:</span>
+            <span class="n">tstfix</span> <span class="o">-=</span> <span class="mf">1440.0</span>
+        <span class="k">while</span> <span class="n">tstfix</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">720</span><span class="p">:</span>
+            <span class="n">tstfix</span> <span class="o">+=</span> <span class="mf">1440.0</span>
+        <span class="k">return</span> <span class="n">tstfix</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@cached</span>
+    <span class="k">def</span> <span class="nf">srss</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sunrise and sunset times (minutes from midnight)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ssha</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">2999.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">2999.0</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">ssha</span> <span class="o">&gt;=</span> <span class="mf">179.0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mf">2999.0</span><span class="p">,</span> <span class="mf">2999.0</span>
+        <span class="n">sunrise</span> <span class="o">=</span> <span class="mf">720.0</span> <span class="o">-</span> <span class="mf">4.0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ssha</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">tstfix</span>
+        <span class="n">sunset</span> <span class="o">=</span> <span class="mf">720.0</span> <span class="o">-</span> <span class="mf">4.0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ssha</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">tstfix</span>
+        <span class="k">return</span> <span class="n">sunrise</span><span class="p">,</span> <span class="n">sunset</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@cached</span>
+    <span class="k">def</span> <span class="nf">sazm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Solar azimuth angle Iqbal, M. 1983. An Introduction to Solar Radiation.</span>
+<span class="sd">        Academic Press, NY., page 15</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ce</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">elevetr</span><span class="p">)</span>
+        <span class="n">se</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">elevetr</span><span class="p">)</span>
+
+        <span class="n">azim</span> <span class="o">=</span> <span class="mf">180.0</span>
+        <span class="n">cecl</span> <span class="o">=</span> <span class="n">ce</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigdata</span><span class="p">[</span><span class="s1">&#39;cl&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">cecl</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mf">0.001</span><span class="p">:</span>
+            <span class="n">ca</span> <span class="o">=</span> <span class="p">(</span><span class="n">se</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigdata</span><span class="p">[</span><span class="s1">&#39;sl&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigdata</span><span class="p">[</span><span class="s1">&#39;sd&#39;</span><span class="p">])</span> <span class="o">/</span> <span class="n">cecl</span>
+            <span class="n">ca</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">ca</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">)</span>
+            <span class="n">azim</span> <span class="o">=</span> <span class="mf">180.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">ca</span><span class="p">)</span> <span class="o">*</span> <span class="n">DEGREES_TO_RADIANS</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hrang</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="n">azim</span> <span class="o">=</span> <span class="mf">360.0</span> <span class="o">-</span> <span class="n">azim</span>
+        <span class="k">return</span> <span class="n">azim</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@cached</span>
+    <span class="k">def</span> <span class="nf">etr_tilt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cosinc</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">etrn</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">cosinc</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@cached</span>
+    <span class="k">def</span> <span class="nf">cosinc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">ca</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sazm</span><span class="p">)</span>
+        <span class="n">cp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">aspect</span><span class="p">)</span>
+        <span class="n">ct</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">tilt</span><span class="p">)</span>
+        <span class="n">sa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sazm</span><span class="p">)</span>
+        <span class="n">sp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">aspect</span><span class="p">)</span>
+        <span class="n">st</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">tilt</span><span class="p">)</span>
+        <span class="n">sz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">zenref</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">coszen</span> <span class="o">*</span> <span class="n">ct</span> <span class="o">+</span> <span class="n">sz</span> <span class="o">*</span> <span class="n">st</span> <span class="o">*</span> <span class="p">(</span><span class="n">ca</span> <span class="o">*</span> <span class="n">cp</span> <span class="o">+</span> <span class="n">sa</span> <span class="o">*</span> <span class="n">sp</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@cached</span>
+    <span class="k">def</span> <span class="nf">amass</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Airmass Kasten, F. and Young, A. 1989. Revised optical air mass tables</span>
+<span class="sd">        and approximation formula. Applied Optics 28 (22), pp. 4735-4738</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">amass</span> <span class="o">=</span> \
+            <span class="n">ampress</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">zenref</span> <span class="o">&lt;</span> <span class="mf">93.0</span><span class="p">:</span>
+            <span class="n">amass</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">zenref</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.50572</span> <span class="o">*</span> <span class="nb">pow</span><span class="p">((</span><span class="mf">96.07995</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">zenref</span><span class="p">),</span> <span class="o">-</span><span class="mf">1.6364</span><span class="p">))</span>
+            <span class="n">ampress</span> <span class="o">=</span> <span class="n">amass</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">press</span> <span class="o">/</span> <span class="mf">1013.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ampress</span> <span class="o">=</span> <span class="n">ampress</span>
+        <span class="k">return</span> <span class="n">amass</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@cached</span>
+    <span class="k">def</span> <span class="nf">ampress</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Airmass Kasten, F. and Young, A. 1989. Revised optical air mass tables</span>
+<span class="sd">        and approximation formula. Applied Optics 28 (22), pp. 4735-4738</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">amass</span> <span class="o">=</span> \
+            <span class="n">ampress</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">zenref</span> <span class="o">&lt;</span> <span class="mf">93.0</span><span class="p">:</span>
+            <span class="n">amass</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">zenref</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.50572</span> <span class="o">*</span> <span class="nb">pow</span><span class="p">((</span><span class="mf">96.07995</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">zenref</span><span class="p">),</span> <span class="o">-</span><span class="mf">1.6364</span><span class="p">))</span>
+            <span class="n">ampress</span> <span class="o">=</span> <span class="n">amass</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">press</span> <span class="o">/</span> <span class="mf">1013.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_amass</span> <span class="o">=</span> <span class="n">amass</span>
+        <span class="k">return</span> <span class="n">ampress</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@cached</span>
+    <span class="k">def</span> <span class="nf">coszen</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">RADIANS_TO_DEGREES</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">zenref</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@cached</span>
+    <span class="k">def</span> <span class="nf">prime</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prime and Unprime Prime converts Kt to normalized Kt&#39;, etc.</span>
+<span class="sd">        Unprime deconverts Kt&#39; to Kt, etc.</span>
+<span class="sd">        Perez, R., P. Ineichen, Seals, R., &amp; Zelenka,</span>
+<span class="sd">        A. 1990. Making full use of the clearness index for parameterizing hourly insolation conditions.</span>
+<span class="sd">        Solar Energy 45 (2), pp. 111-114</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">unprime</span> <span class="o">=</span> <span class="mf">1.031</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">1.4</span> <span class="o">/</span> <span class="p">(</span><span class="mf">0.9</span> <span class="o">+</span> <span class="mf">9.4</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">amass</span><span class="p">))</span> <span class="o">+</span> <span class="mf">0.1</span>
+        <span class="k">return</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">unprime</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@cached</span>
+    <span class="k">def</span> <span class="nf">etr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extraterrestrial (top-of-atmosphere) solar irradiance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">coszen</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_etrn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solcon</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_erv</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_etrn</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">coszen</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@cached</span>
+    <span class="k">def</span> <span class="nf">etrn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extraterrestrial (top-of-atmosphere) solar irradiance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">coszen</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.0</span>
+        <span class="n">etrn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solcon</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_erv</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_etr</span> <span class="o">=</span> <span class="n">etrn</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">coszen</span>
+        <span class="k">return</span> <span class="n">etrn</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">latitude</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        latitude, degrees north (south negative)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_latitude</span>
+
+    <span class="nd">@latitude</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">latitude</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_latitude</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">longitude</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        longitude, degrees east (west negative)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_longitude</span>
+
+    <span class="nd">@longitude</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">longitude</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_longitude</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">year</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        4 digit year</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_year</span>
+
+    <span class="nd">@year</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">year</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_year</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">month</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Month number 1-12</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_month</span>
+
+    <span class="nd">@month</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">month</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_month</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@cached</span>
+    <span class="k">def</span> <span class="nf">dayofmonth</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        day of month, (May 27 = 27, etc)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dayofmonth</span>
+
+    <span class="nd">@dayofmonth</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">dayofmonth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">day</span><span class="p">,</span> <span class="n">month</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_year</span><span class="p">,</span> <span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="p">),</span> <span class="s2">&quot;%Y-%-m-</span><span class="si">%-d</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dayofyear</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()</span><span class="o">.</span><span class="n">tm_yday</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dayofmonth</span> <span class="o">=</span> <span class="n">day</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_month</span> <span class="o">=</span> <span class="n">month</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@cached</span>
+    <span class="k">def</span> <span class="nf">dayofyear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Day number (day of year; Feb 1 = 32 )</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dayofyear</span>
+
+    <span class="nd">@dayofyear</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">dayofyear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)),</span> <span class="s2">&quot;%Y-%j&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dayofyear</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dayofmonth</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">day</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_month</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">month</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">hour</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        hour of day, 0-23</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hour</span>
+
+    <span class="nd">@hour</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">hour</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hour</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">minute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        minute of hour (0-59)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_minute</span>
+
+    <span class="nd">@minute</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">minute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_minute</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">second</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Second of minute, 0 - 59</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_second</span>
+
+    <span class="nd">@second</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">second</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_second</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">interval</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        instantaneous measurement interval</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interval</span>
+
+    <span class="nd">@interval</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">interval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_interval</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">aspect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Azimuth of panel surface (direction it faces)</span>
+<span class="sd">        N=0, E=90, S=180, W=270</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aspect</span>
+
+    <span class="nd">@aspect</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">aspect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_aspect</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">press</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Surface pressure, millibars</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_press</span>
+
+    <span class="nd">@press</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_press</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">solcon</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Solar constant, 1367 W/sq m</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_solcon</span>
+
+    <span class="nd">@solcon</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">solcon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_solcon</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">temp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Ambient dry-bulb temperature, degrees C</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_temp</span>
+
+    <span class="nd">@temp</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">temp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_temp</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">tilt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Degrees tilt from horizontal of panel</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tilt</span>
+
+    <span class="nd">@tilt</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">tilt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tilt</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">timezone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Time zone, east (west negative).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timezone</span>
+
+    <span class="nd">@timezone</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">timezone</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_timezone</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sbwid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Eppley shadow band width</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sbwid</span>
+
+    <span class="nd">@sbwid</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">sbwid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sbwid</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sbrad</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Eppley shadow band radius</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sbrad</span>
+
+    <span class="nd">@sbrad</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">sbrad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sbrad</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sbsky</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Drummond factor for partly cloudy skies</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sbsky</span>
+
+    <span class="nd">@sbsky</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">sbsky</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sbsky</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2016, Kurt Spokas, Gareth Dunstone.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

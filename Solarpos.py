@@ -190,14 +190,17 @@ class Solarpos(object):
         if lmst < 0.0:
             lmst += 360.0
 
-        self.hrang = lmst - rascen
-        if self.hrang < -180.0:
-            self.hrang += 360.0
-        elif self.hrang > 180.0:
-            self.hrang -= 360.0
+        self._hrang = lmst - rascen
+        if self._hrang < -180.0:
+            self._hrang += 360.0
+        elif self._hrang > 180.0:
+            self._hrang -= 360.0
 
     @property
     def erv(self):
+        """
+        Earth radius vector (multiplied to solar constant)
+        """
         return self._erv
 
     @property
@@ -367,7 +370,7 @@ class Solarpos(object):
             ca = (se * self.trigdata['sl'] - self.trigdata['sd']) / cecl
             ca = min(max(ca, -1.0), 1.0)
             azim = 180.0 - np.arccos(ca) * DEGREES_TO_RADIANS
-            if self.hrang > 0.0:
+            if self._hrang > 0.0:
                 azim = 360.0 - azim
         return azim
 
@@ -536,7 +539,7 @@ class Solarpos(object):
 
     @dayofyear.setter
     def dayofyear(self, value):
-        dt = datetime.datetime.strptime("{}-{}".format(str(value), self.year), "%Y-%-j")
+        dt = datetime.datetime.strptime("{}-{}".format(self.year, str(value)), "%Y-%j")
         self._dayofyear = value
         self._dayofmonth = dt.day
         self._month = dt.month
