@@ -1,5 +1,7 @@
 import numpy as np
 from Solarpos import Solarpos
+np.set_printoptions(precision=12)
+np.set_printoptions(suppress=True)
 SPO = 1360.0
 
 DEGREES_TO_RADIANS = np.pi / 180.0
@@ -54,6 +56,13 @@ class Spectra(object):
         self.watvap = -1.0
         # aerosol asymmetry factor, rural assumed
         self.assym = 0.65
+
+        # TESTING VALUES
+        self.dayofyear = 1
+        self.latitude=52
+        self.longitude=120
+        self.tau500 = 0.5
+        self.watvap = 0.3
 
     def calc_ozone(self):
         """
@@ -358,13 +367,15 @@ class Spectra(object):
                 # total integrated solar irradiance (specdat.specglo)
                 integration[i, 2] = specxdelta * (spec[i, 4] + spec[i - 1, 4])
 
-                for group in groups:
-                    if group[4] <= i <= group[5]:
-                        group[0] += max(integration[i, 2], 0)
-                        group[1] += specxdelta * (spec[i, 2] + spec[i - 1, 2])
-                        group[2] += 1
-                        group[3] += shadingmultiplier[i]
+                for gidx, group in enumerate(groups):
+                    if (group[5] <= i <= group[4]):
+                        groups[gidx,0] += max(integration[i, 2], 0)
+                        groups[gidx,1] += specxdelta * (spec[i, 2] + spec[i - 1, 2])
+                        groups[gidx,2] += 1
+                        groups[gidx,3] += shadingmultiplier[i]
 
+            # TODO: This isnt correct. groups[:, 2] is 0 mayb?
+            # groups[:, 2] is 0 for some reason.
             groups[:, 3] = np.divide(groups[:, 3], groups[:, 2])
             # these probably arent needed.
             totdirect = np.sum(integration[:, 0])
@@ -417,5 +428,3 @@ class Spectra(object):
         fluro_conviron = spec[29, 1] / spec[29, 4]
         for group in groups[1:]:
             group[0] = group[1, 0] / totvis * group[6] * 100
-
-
