@@ -1,5 +1,6 @@
 import numpy as np
 import datetime
+from pysolar import solar
 from world_temp_sim import TempSim
 from Spectra import Spectra
 iso8601 = "%Y-%m-%dT%H:%M:%S"
@@ -63,12 +64,14 @@ class LightSim(object):
         spectral_intensity_max = [0] * 122
         lc = self.longitudal_correction()
         temp_rh = list()
+        temps = self.tempsim.get_daily_temps(self.latitude, lon=self.longitude)
+        pressure = self.pressure_kPa()
+
         for day in range(1, 366):
             for hour in range(8, 16):
                 solarnoon = 12 - lc - self.equation_of_time_correction(day)
                 solar_declination = self.solar_declination(day)
                 zenith_angle = self.zenith_angle(solar_declination, hour, solarnoon)
-                pressure = self.pressure()
                 irradiance = self.diffuse_sky_irradiance(pressure, zenith_angle)
                 yearly_solarmax = max(yearly_solarmax, irradiance)
                 daily_solarmax[day-1] = max(daily_solarmax[day-1], irradiance)
@@ -80,17 +83,17 @@ class LightSim(object):
                 # tou is atmospheric tramsmission :
                 # overcast = 0.4 --> from Liu and Jordan (1960)
                 # clear = 0.70 --> as given in Gates (1980)
-                mintemp, maxtemp = self.tempsim.avgdailyt[day-1]
+                mintemp, maxtemp = temps[day-1]
                 if halfdaylength < 10.5:
                     d1 = 0 if day > 365 else day + 1
                     if self.use_ces:
-                        tomorrow_mintemp = self.tempsim.avgdailyt[d1][0]
+                        tomorrow_mintemp = temps[d1][0]
                         temp_rh.extend(self.fit_temp_rh(mintemp, maxtemp, tomorrow_mintemp, sunrise, sunset))
                     else:
                         temp_rh.extend(self.fit_sine_temp_rh(mintemp, maxtemp))
                 else:
                     temp_rh.extend(self.fit_sine_temp_rh(mintemp, maxtemp))
-                tao = self.calc_tao(day)
+
                 air_temp = (mintemp + maxtemp) / 2
 
                 spectra = Spectra()
@@ -99,10 +102,11 @@ class LightSim(object):
                 spectra.units = 1
                 spectra.watvap = 1
                 spectra.press = pressure
-
                 spectra.year = 2012
                 spectra.dayofyear = day
+                spectra.tau500 = self.calc_tao(day)
                 spectra.temp = temp_rh[-1][0]
+                spectra.timezone = -11
 
                 spectra.hour = hour
                 spec, integration, groups, trad, totvis = spectra.calc_all_spectral(irradiance)
@@ -222,8 +226,14 @@ class LightSim(object):
         rh = min(eos / eo, 1.0)
         return rh * 100.0
 
-    def pressure(self):
-        return 101.0 * np.exp(-1 * self.altitude / 8200.0)
+    def pressure_kPa(self, altitude=None):
+        """
+        calculates the pressure in kPa
+
+        :rtype: float
+        """
+        return 0.1 * ((44331.514 - (altitude or self.altitude)) / 11880.516) ** (1 / 0.1902632)
+        # return 101.0 * np.exp(-1 * self.altitude / 8200.0)
 
     def diffuse_sky_irradiance(self, pressure: float, zenith_angle: float) -> float:
         """
@@ -237,8 +247,8 @@ class LightSim(object):
         """
         tao = 0.7
         m = pressure / 101.3 / np.cos(zenith_angle)
-        sp = SPO * pow(tao, m)
-        sd = 0.3 * (1.0 - pow(tao, m)) * np.cos(zenith_angle) * SPO
+        sp = SPO * np.power(tao, m)
+        sd = 0.3 * (1.0 - np.power(tao, m)) * np.cos(zenith_angle) * SPO
         # beam irradiance on a horizontal surface
         sb = sp * np.cos(zenith_angle)
         return sb + sd
@@ -268,7 +278,7 @@ class LightSim(object):
 
         v0 = np.sin(self.latrad) * np.sin(solar_declination)
         v1 = np.cos(self.latrad) * np.cos(solar_declination)
-        v2 = np.cos(15 * (time - solarnoon) * DEGREES_TO_RADIANS)
+        v2 = np.cos(np.radians(15 * (time - solarnoon)))
 
         return np.arccos(v0 + v1 * v2)
 
@@ -293,7 +303,7 @@ class LightSim(object):
         :return: eot correction
         :rtype: float
         """
-        et_calc = (279.575 + 0.9856 * dayofyear) * DEGREES_TO_RADIANS
+        et_calc = np.radians(279.575 + 0.9856 * dayofyear)
         v0 = -104.7 * np.sin(et_calc) + 596.2 * np.sin(et_calc * 2) + 4.3
         v1 = np.sin(3.0 * et_calc) + -12.7
         v2 = np.sin(4.0 * et_calc) + -429.3 * np.cos(et_calc)
@@ -312,9 +322,25 @@ class LightSim(object):
         :return: solar declination angle
         :rtype: float
         """
-        v1 = np.sin((356.6 + 0.9856 * dayofyear) * DEGREES_TO_RADIANS)
-        v2 = np.sin((278.97 + 0.9856 * dayofyear + 1.9165 * v1) * DEGREES_TO_RADIANS)
+        v1 = np.sin(np.radians(356.6 + 0.9856 * dayofyear))
+        v2 = np.sin(np.radians(278.97 + 0.9856 * dayofyear + 1.9165 * v1))
         return np.arcsin(0.39785 * v2)
+
+    @staticmethod
+    def solar_declination2(dayofyear: int) -> float:
+        """
+        Calculate solar declination angle...
+        formula from Campbell and Norman, 1998 [Eq. 11.2]
+        corrected for day of year (Jan. 1 = 1, etc.)
+
+        :param dayofyear: day of the year
+        :type: int
+        :return: solar declination angle
+        :rtype: float
+        """
+        return 23.45 * np.sin((2 * np.pi / 365.0) * (dayofyear - 81))
+
+
 
     @staticmethod
     def stefan_boltzman_radiation_watts(airtemp: float) -> float:

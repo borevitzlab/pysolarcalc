@@ -51,7 +51,6 @@ class Solarpos(object):
             self.dayofyear = dayofyear
         if day is not None and month is not None:
             self.dayofmonth = day, month
-
         self._latitude = latitude
         self._longitude = longitude
 
@@ -146,11 +145,11 @@ class Solarpos(object):
         """
         dayang = 360.0 * (self.dayofyear - 1.0) / 365.0
 
-        sd = np.sin(RADIANS_TO_DEGREES * dayang)
-        cd = np.cos(RADIANS_TO_DEGREES * dayang)
+        sd = np.sin(np.degrees(dayang))
+        cd = np.cos(np.degrees(dayang))
         d2 = 2.0 * dayang
-        c2 = np.cos(RADIANS_TO_DEGREES * d2)
-        s2 = np.sin(RADIANS_TO_DEGREES * d2)
+        c2 = np.cos(np.degrees(d2))
+        s2 = np.sin(np.degrees(d2))
         self._erv = (1.000110 + 0.034221 * cd + 0.001280 * sd) + (0.000719 * c2 + 0.000077 * s2)
         self.utime = self.hour * 3600 + self.minute * 60 + self.second - self.interval / 2.0
         self.utime = self.utime / 3600 - self.timezone
@@ -164,18 +163,21 @@ class Solarpos(object):
             mean_longitude += 360
         mean_anomaly = 357.528 + 0.9856003 * ecliptic_time
         mean_anomaly -= 360.0 * int(mean_anomaly / 360.0)
-        ecliptic_longitude = mean_longitude + 1.915 * np.sin(mean_anomaly * RADIANS_TO_DEGREES)
-        ecliptic_longitude += 0.020 * np.sin(2.0 * mean_anomaly * RADIANS_TO_DEGREES)
+        ecliptic_longitude = mean_longitude + 1.915 * np.sin(np.degrees(mean_anomaly))
+        ecliptic_longitude += 0.020 * np.sin(np.degrees(2.0 * mean_anomaly))
         ecliptic_longitude -= 360 * int(ecliptic_longitude / 360)
         if ecliptic_longitude < 0.0:
             ecliptic_longitude += 360
         ecliptic_obliquity = 23.439 - 4.0e-07 * ecliptic_time
-        v1 = np.sin(ecliptic_obliquity * RADIANS_TO_DEGREES) * np.sin(ecliptic_longitude * RADIANS_TO_DEGREES)
-        self._declin = DEGREES_TO_RADIANS * np.arcsin(v1)
+        ecliptic_obliquity_degrees = np.degrees(ecliptic_obliquity)
+        ecliptic_longitude_degrees = np.degrees(ecliptic_longitude)
+        v1 = np.sin(ecliptic_obliquity_degrees) * np.sin(ecliptic_longitude_degrees)
+        self._declin = np.radians(np.arcsin(v1))
 
-        top = np.cos(RADIANS_TO_DEGREES * ecliptic_obliquity) * np.sin(RADIANS_TO_DEGREES * ecliptic_longitude)
-        bottom = np.cos(RADIANS_TO_DEGREES * ecliptic_longitude)
-        rascen = DEGREES_TO_RADIANS * np.arctan2(top, bottom)
+        top = np.cos(ecliptic_obliquity_degrees) * np.sin(ecliptic_longitude_degrees)
+        bottom = np.cos(ecliptic_longitude_degrees)
+
+        rascen = np.radians(np.arctan2(top, bottom))
 
         if rascen < 0.0:
             rascen += 360.0
@@ -215,7 +217,7 @@ class Solarpos(object):
         # watch out for the roundoff errors
         cz = min(max(cz, -1.0), 1.0)
 
-        zenetr = np.arccos(cz) * DEGREES_TO_RADIANS
+        zenetr = np.radians(np.arccos(cz))
         # limit the degrees below the horizon to 9 [+90 . 99]
         return min(zenetr, 99.0)
 
@@ -230,7 +232,7 @@ class Solarpos(object):
         refcor = 0.0
         # If the sun is near zenith, the algorithm bombs; refraction near 0
         if self.elevetr <= 85.0:
-            tanelev = np.tan(RADIANS_TO_DEGREES * self.elevetr)
+            tanelev = np.tan(np.degrees(self.elevetr))
             if self.elevetr >= 5.0:
                 refcor = 58.1 / tanelev - 0.07 / (pow(tanelev, 3)) + 0.000086 / (pow(tanelev, 5))
             elif self.elevetr >= -0.575:
@@ -261,7 +263,7 @@ class Solarpos(object):
         refcor = 0.0
         # If the sun is near zenith, the algorithm bombs; refraction near 0
         if self.elevetr <= 85.0:
-            tanelev = np.tan(RADIANS_TO_DEGREES * self.elevetr)
+            tanelev = np.tan(np.degrees(self.elevetr))
             if self.elevetr >= 5.0:
                 refcor = 58.1 / tanelev - 0.07 / (pow(tanelev, 3)) + 0.000086 / (pow(tanelev, 5))
             elif self.elevetr >= -0.575:
@@ -283,25 +285,20 @@ class Solarpos(object):
         Sunset hour angle, degrees Iqbal, M. 1983. An Introduction to Solar
         Radiation. Academic Press, NY., page 16
         """
-
         cdcl = self.trigdata['cd'] * self.trigdata['cl']
         if abs(cdcl) >= 0.001:
             cssha = -self.trigdata['sl'] * self.trigdata['sd'] / cdcl
 
             # This keeps the cosine from blowing on roundoff * /
             if cssha < -1.0:
-                ssha = 180.0
+                return 180.0
             elif cssha > 1.0:
-                self._ssha = 0.0
+                return 0.0
             else:
-                self._ssha = DEGREES_TO_RADIANS * np.arccos(cssha)
-
-        elif (((self._declin >= 0.0) and (self.latitude > 0.0)) or
-                  ((self._declin < 0.0) and (self.latitude < 0.0))):
-            self._ssha = 180.0
-        else:
-            self._ssha = 0.0
-        return self._ssha
+                return DEGREES_TO_RADIANS * np.arccos(cssha)
+        elif (((self._declin >= 0.0) and (self.latitude > 0.0)) or ((self._declin < 0.0) and (self.latitude < 0.0))):
+            return 180.0
+        return 0.0
 
     @property
     @cached
@@ -311,8 +308,8 @@ class Solarpos(object):
         absolute pyrheliometry. Q. J. R. Meteorol. Soc. 82, pp. 481-493
         """
         p = 0.6366198 * self.sbwid / self.sbrad * pow(self.trigdata['cd'], 3)
-        t1 = self.trigdata['sl'] * self.trigdata['sd'] * self.ssha * RADIANS_TO_DEGREES
-        t2 = self.trigdata['cl'] * self.trigdata['cd'] * np.sin(self.ssha * RADIANS_TO_DEGREES)
+        t1 = np.degrees(self.trigdata['sl'] * self.trigdata['sd'] * self.ssha)
+        t2 = self.trigdata['cl'] * self.trigdata['cd'] * np.sin(np.degrees(self.ssha))
         return self.sbsky + 1.0 / (1.0 - p * (t1 + t2))
 
     @property
@@ -361,15 +358,15 @@ class Solarpos(object):
         Academic Press, NY., page 15
 
         """
-        ce = np.cos(RADIANS_TO_DEGREES * self.elevetr)
-        se = np.sin(RADIANS_TO_DEGREES * self.elevetr)
+        ce = np.cos(np.radians(self.elevetr))
+        se = np.sin(np.radians(self.elevetr))
 
         azim = 180.0
         cecl = ce * self.trigdata['cl']
         if abs(cecl) >= 0.001:
             ca = (se * self.trigdata['sl'] - self.trigdata['sd']) / cecl
             ca = min(max(ca, -1.0), 1.0)
-            azim = 180.0 - np.arccos(ca) * DEGREES_TO_RADIANS
+            azim = np.radians(180.0 - np.arccos(ca))
             if self._hrang > 0.0:
                 azim = 360.0 - azim
         return azim
@@ -384,13 +381,13 @@ class Solarpos(object):
     @property
     @cached
     def cosinc(self):
-        ca = np.cos(RADIANS_TO_DEGREES * self.sazm)
-        cp = np.cos(RADIANS_TO_DEGREES * self.aspect)
-        ct = np.cos(RADIANS_TO_DEGREES * self.tilt)
-        sa = np.sin(RADIANS_TO_DEGREES * self.sazm)
-        sp = np.sin(RADIANS_TO_DEGREES * self.aspect)
-        st = np.sin(RADIANS_TO_DEGREES * self.tilt)
-        sz = np.sin(RADIANS_TO_DEGREES * self.zenref)
+        ca = np.cos(np.radians(self.sazm))
+        cp = np.cos(np.radians(self.aspect))
+        ct = np.cos(np.radians(self.tilt))
+        sa = np.sin(np.radians(self.sazm))
+        sp = np.sin(np.radians(self.aspect))
+        st = np.sin(np.radians(self.tilt))
+        sz = np.sin(np.radians(self.zenref))
         return self.coszen * ct + sz * st * (ca * cp + sa * sp)
 
     @property
@@ -401,10 +398,9 @@ class Solarpos(object):
         and approximation formula. Applied Optics 28 (22), pp. 4735-4738
 
         """
-        amass = \
-            ampress = -1.0
+        amass = ampress = -1.0
         if self.zenref < 93.0:
-            amass = 1.0 / (np.cos(RADIANS_TO_DEGREES * self.zenref) + 0.50572 * pow((96.07995 - self.zenref), -1.6364))
+            amass = 1.0 / (np.cos(np.radians(self.zenref)) + 0.50572 * pow((96.07995 - self.zenref), -1.6364))
             ampress = amass * self.press / 1013.0
         self._ampress = ampress
         return amass
@@ -416,10 +412,10 @@ class Solarpos(object):
         Airmass Kasten, F. and Young, A. 1989. Revised optical air mass tables
         and approximation formula. Applied Optics 28 (22), pp. 4735-4738
         """
-        amass = \
-            ampress = -1.0
+        amass = ampress = -1.0
+        print(self.zenref)
         if self.zenref < 93.0:
-            amass = 1.0 / (np.cos(RADIANS_TO_DEGREES * self.zenref) + 0.50572 * pow((96.07995 - self.zenref), -1.6364))
+            amass = 1.0 / (np.cos(np.radians(self.zenref)) + 0.50572 * pow((96.07995 - self.zenref), -1.6364))
             ampress = amass * self.press / 1013.0
         self._amass = amass
         return ampress
@@ -427,7 +423,7 @@ class Solarpos(object):
     @property
     @cached
     def coszen(self):
-        return np.cos(RADIANS_TO_DEGREES * self.zenref)
+        return np.cos(np.radians(self.zenref))
 
     @property
     @cached

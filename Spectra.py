@@ -1,6 +1,6 @@
 import numpy as np
 from Solarpos import Solarpos
-np.set_printoptions(precision=12)
+# np.set_printoptions(precision=12)
 np.set_printoptions(suppress=True)
 SPO = 1360.0
 
@@ -56,13 +56,6 @@ class Spectra(object):
         self.watvap = -1.0
         # aerosol asymmetry factor, rural assumed
         self.assym = 0.65
-
-        # TESTING VALUES
-        self.dayofyear = 1
-        self.latitude=52
-        self.longitude=120
-        self.tau500 = 0.5
-        self.watvap = 0.3
 
     def calc_ozone(self):
         """
@@ -249,7 +242,7 @@ class Spectra(object):
             fs = 1.0 - 0.5 * np.exp((afs + bfs * cz) * cz)
             # Ozone mass
             ozone_mass = 1.003454 / np.sqrt((cz * cz) + 0.006908)
-            amass, ampress, erv = solarpos.amass, solarpos.ampress, solarpos.erv
+            amass, ampress, erv = float(solarpos.amass), float(solarpos.ampress), float(solarpos.erv)
             tau500, alpha, watvap, tilt, units = self.tau500, self.alpha, self.watvap, self.tilt, self.units
             wvlrefl, refl = self.spcwvr, self.spcrfl
             nr = 1
@@ -265,20 +258,17 @@ class Spectra(object):
                 unif_mix_gas_ab_coeff = uniformly_mixed_gas_absorbtion_coeff[i]
 
                 omegl = omeg * np.exp(-omegp * (np.log(wvl / 0.4) * np.log(wvl / 0.4)))
-                c1 = tau500 * pow(wvl * 2.0, -alpha)
+                c1 = tau500 * np.power(wvl * 2.0, -alpha)
 
                 # Equation 2-4
                 Tr = np.exp(-ampress / ((wvl * wvl * wvl * wvl) * (115.6406 - 1.3366 / (wvl * wvl))))
                 # Equation 2-9
                 To = np.exp(-ozone_absorb_coeff * O3 * ozone_mass)
                 # Equation 2-8
-                Tw = np.exp(
-                    -0.2385 * watvap_coeff * watvap * ampress / pow((1.0 + 20.07 * watvap_coeff * watvap * ampress),
-                                                                    0.45))
+                Tw = np.exp(-0.2385 * watvap_coeff * watvap * ampress / np.power((1.0 + 20.07 * watvap_coeff * watvap * ampress), 0.45))
+                # print(watvap, ampress, Tw)
                 # Equation 2-11
-                Tu = np.exp(
-                    -1.41 * unif_mix_gas_ab_coeff * ampress / pow((1.0 + 118.3 * unif_mix_gas_ab_coeff * ampress),
-                                                                  0.45))
+                Tu = np.exp(-1.41 * unif_mix_gas_ab_coeff * ampress / np.power(1.0 + 118.3 * unif_mix_gas_ab_coeff * ampress, 0.45))
                 # Equation 3-9
                 Tas = np.exp(-omegl * c1 * ampress)
                 # Equation 3-10
@@ -286,11 +276,11 @@ class Spectra(object):
                 # Equation 2-6, sort of
                 Ta = np.exp(-c1 * ampress)
                 # Equation 2-4 primed airmass M = 1.8 (Section 3.1)
-                Trp = np.exp(-1.8 / (pow(wvl, 4) * (115.6406 - 1.3366 / (wvl * wvl))))
+                Trp = np.exp(-1.8 / (np.power(wvl, 4) * (115.6406 - 1.3366 / (wvl * wvl))))
                 # Equation 2-8 primed airmass M = 1.8 (Section 3.1) affects coefficients
-                Twp = np.exp(-0.4293 * watvap_coeff * watvap / pow((1.0 + 36.126 * watvap_coeff * watvap), 0.45))
+                Twp = np.exp(-0.4293 * watvap_coeff * watvap / np.power((1.0 + 36.126 * watvap_coeff * watvap), 0.45))
                 # Equation 2-11 primed airmass M = 1.8 (Section 3.1) affects coefficients
-                Tup = np.exp(-2.538 * unif_mix_gas_ab_coeff / pow((1.0 + 212.94 * unif_mix_gas_ab_coeff), 0.45))
+                Tup = np.exp(-2.538 * unif_mix_gas_ab_coeff / np.power((1.0 + 212.94 * unif_mix_gas_ab_coeff), 0.45))
                 # Equation 3-9 primed airmass M = 1.8 (Section 3.1)
                 Tasp = np.exp(-omegl * c1 * 1.8)
                 # Equation 3-10 primed airmass M = 1.8 (Section 3.1)
@@ -307,21 +297,21 @@ class Spectra(object):
 
                 # I think this is equivalent.
                 nr = next((idx for idx, val in enumerate(wvlrefl) if val <= wvl), 0) + 1
-
+                # to this
                 # if wvl > wvlrefl[nr]:
                 #     nr += 1
 
                 c3 = (refl[nr] - refl[nr - 1]) / (wvlrefl[nr] - wvlrefl[nr - 1])
                 # Equation 3-17 c4 = Cs
-                c4 = 1.0 if wvl > 0.45 else pow((wvl + 0.55), 1.8)
+                c4 = 1.0 if wvl > 0.45 else np.power((wvl + 0.55), 1.8)
                 # Equation 3-8
                 rhoa = Tup * Twp * Taap * (0.5 * (1.0 - Trp) + (1.0 - fsp) * Trp * (1.0 - Tasp))
                 # Interpolated ground reflectivity
                 rho = c3 * (wvl - wvlrefl[nr - 1]) + refl[nr - 1]
                 # Equation 3-5
-                dray = c2 * (1.0 - pow(Tr, 0.95)) / 2.0
+                dray = c2 * (1.0 - np.power(Tr, 0.95)) / 2.0
                 # Equation 3-6
-                daer = c2 * pow(Tr, 1.5) * (1.0 - Tas) * fs
+                daer = c2 * np.power(Tr, 1.5) * (1.0 - Tas) * fs
                 # Equation 3-7
                 drgd = (dir * cz + dray + daer) * rho * rhoa / (1.0 - rho * rhoa)
                 # Equation 3-1
@@ -369,10 +359,10 @@ class Spectra(object):
 
                 for gidx, group in enumerate(groups):
                     if (group[5] <= i <= group[4]):
-                        groups[gidx,0] += max(integration[i, 2], 0)
-                        groups[gidx,1] += specxdelta * (spec[i, 2] + spec[i - 1, 2])
-                        groups[gidx,2] += 1
-                        groups[gidx,3] += shadingmultiplier[i]
+                        groups[gidx, 0] += max(integration[i, 2], 0)
+                        groups[gidx, 1] += specxdelta * (spec[i, 2] + spec[i - 1, 2])
+                        groups[gidx, 2] += 1
+                        groups[gidx, 3] += shadingmultiplier[i]
 
             # TODO: This isnt correct. groups[:, 2] is 0 mayb?
             # groups[:, 2] is 0 for some reason.

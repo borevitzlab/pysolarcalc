@@ -33,9 +33,7 @@ class TempSim(object):
 
         self.avgtemp = np.array([])
         self.avgdailyt = np.array([])
-        self.diurnaltemp = np.array([])
-
-        self.deltat = TempSim.read_deltat()
+        self.diurnaltemp = TempSim.read_deltat()
 
         self.year_avg = \
             self._min_temp = \
@@ -97,7 +95,7 @@ class TempSim(object):
             data = np.array(data)
 
             def match(v):
-                return abs(float(v[0]) - lat2) < 0.5 and abs(float(v[1]) - lon2) < 0.5
+                return abs(float(v[0]) - lon2) < 0.5 and abs(float(v[1]) - lat2) < 0.5
 
             matching = next((x[2:] for x in data if match(x)), None)
             if matching is None:
@@ -206,7 +204,7 @@ class TempSim(object):
 
         for m in range(12):
             # TODO: possible semantic bug! should lon2 and lat2 be swapped here?
-            if float(self.diurnaltemp[lon2, lat2, m]) / 10.0 == -999.90:
+            if float(self.diurnaltemp[lat2, lon2, m]) / 10.0 == -999.90:
                 invalid = True
                 print("Invalid Delta T -- approximating with Geerts(2002)")
                 break
