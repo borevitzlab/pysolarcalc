@@ -48,14 +48,21 @@ class Spectra(object):
         self.alpha = 1.14
         # Aerosol assymetry factor (rural assumed)
         self.assym = 0.65
-        # Atmospheric ozone (cm) -1.0 = let S_spectral2 calculate it
-        self.ozone = -1.0
+        # Atmospheric ozone (cm) None = let S_spectral2 calculate it
+        self.ozone = None
         # Aerosol optical depth at 0.5 microns, base e
-        self.tau500 = -1.0
+        self.tau500 = None # 0 < tau500 <= 1.0 >0
         # Precipitable water vapor (cm)
-        self.watvap = -1.0
+        self.watvap = None # > 0
         # aerosol asymmetry factor, rural assumed
         self.assym = 0.65
+
+        # Atmospheric ozone (cm) None = let S_spectral2 calculate it
+        self.ozone = None
+        # Aerosol optical depth at 0.5 microns, base e
+        self.tau500 = 0.5  # 0 < tau500 <= 1.0 >0
+        # Precipitable water vapor (cm)
+        self.watvap = 101  # > 0
 
     def calc_ozone(self):
         """
@@ -63,7 +70,7 @@ class Spectra(object):
 
         :rtype: float
         """
-        if self.ozone < 0:
+        if self.ozone is None:
             c1 = 100.0
             c2 = 1.5
             c3 = 30.0
@@ -99,11 +106,6 @@ class Spectra(object):
         assert (0.0 <= self.tau500 <= 10.0), "tau500 should be within 0.0 to 10.0"
         assert (0.0 <= self.assym <= 1.0), "assym should be between 0 and 1"
 
-        # some magic numbers?
-        grp1high, grp1low = 0, 13
-        grp2high, grp2low = 14, 25
-        grp3high, grp3low = 26, 32
-        grp4high, grp4low = 33, 38
         """
         This array contains the extraterrestrial spectrum and atmospheric absorption coefficients at 122 wavelengths.
         0 = wavelength (microns)
@@ -112,7 +114,7 @@ class Spectra(object):
         3 = ozone absorption coefficient
         4 = uniformly mixed gas "absorption coefficient"
         """
-
+        # spline these
         wavelength_microns = np.array(
             [0.3, 0.305, 0.31, 0.315, 0.32, 0.325, 0.33, 0.335, 0.34, 0.345, 0.35, 0.36, 0.37, 0.38, 0.39, 0.4, 0.4,
              0.42, 0.43, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49, 0.5, 0.51, 0.52, 0.53, 0.54, 0.55, 0.57, 0.593, 0.6, 0.63,
@@ -192,15 +194,6 @@ class Spectra(object):
         # specdif = np.zeros(122) # diffuse spectrum
         # specglo = np.zeros(122) # global spectrum
 
-
-        # grps is for the following, sc.grp<n>, refgrp<n>, countgrp<n>, grp<n>shademult, grouplow, grouphigh, groupmuliplier
-        groups = np.zeros((4, 7))
-        groups[0, 4:6] = grp1low, grp1high
-        groups[1, 4:6] = grp2low, grp2high
-        groups[2, 4:6] = grp3low, grp3high
-        groups[3, 4:6] = grp4low, grp4high
-        groups[:, 6] = self.group_multipliers
-
         # these are represented in 'groups'
         # output<n> (sc.grp<n>)
         # refgrp = np.zeros(4)
@@ -216,7 +209,7 @@ class Spectra(object):
         # direct
         # diffuse
         # total
-        integration = np.zeros((122, 3))
+        integration = np.zeros((122, 2))
         trad = 0.0
         totvis = 0.0
         if solarpos.zenref < 90:
@@ -296,10 +289,10 @@ class Spectra(object):
                 c2 *= cz * Taa
 
                 # I think this is equivalent.
-                nr = next((idx for idx, val in enumerate(wvlrefl) if val <= wvl), 0) + 1
+                # nr = next((idx for idx, val in enumerate(wvlrefl) if val <= wvl), 0) + 1
                 # to this
-                # if wvl > wvlrefl[nr]:
-                #     nr += 1
+                if wvl > wvlrefl[nr]:
+                    nr += 1
 
                 c3 = (refl[nr] - refl[nr - 1]) / (wvlrefl[nr] - wvlrefl[nr - 1])
                 # Equation 3-17 c4 = Cs
@@ -351,32 +344,22 @@ class Spectra(object):
 
                 # direct integration
                 integration[i, 0] = specxdelta * (spec[i, 1] + spec[i - 1, 1])
-                # diffuse integration
-                integration[i, 1] = specxdelta * (spec[i, 3] + spec[i - 1, 3])
                 # Sum individual wavelength contributions to the spectra:
                 # total integrated solar irradiance (specdat.specglo)
-                integration[i, 2] = specxdelta * (spec[i, 4] + spec[i - 1, 4])
+                integration[i, 1] = specxdelta * (spec[i, 4] + spec[i - 1, 4])
 
-                for gidx, group in enumerate(groups):
-                    if (group[5] <= i <= group[4]):
-                        groups[gidx, 0] += max(integration[i, 2], 0)
-                        groups[gidx, 1] += specxdelta * (spec[i, 2] + spec[i - 1, 2])
-                        groups[gidx, 2] += 1
-                        groups[gidx, 3] += shadingmultiplier[i]
-
-            # TODO: This isnt correct. groups[:, 2] is 0 mayb?
-            # groups[:, 2] is 0 for some reason.
-            groups[:, 3] = np.divide(groups[:, 3], groups[:, 2])
             # these probably arent needed.
             totdirect = np.sum(integration[:, 0])
-            totdiffuse = np.sum(integration[:, 1])
+
             # this is actually in the code somewhere but is more cryptic
             # it increments a variable called localTotalSun and then sets the value in Solarcalc (sc.trad)
             # to it and does this calc.
-            trad = np.sum(np.clip(integration[:, 2], 0.0, np.inf))
-            totvis = np.sum(np.clip(integration[14:55, 2], 0.0, np.inf))
-            integration[:, 2] /= (solar_irradiance * trad)
-        return spec, integration, groups, trad, totvis
+            trad = np.sum(np.clip(integration[:, 1], 0.0, np.inf))
+            totvis = np.sum(np.clip(integration[14:55, 1], 0.0, np.inf))
+            integration[:, 1] /= (solar_irradiance * trad)
+
+        # integration  (W/sq m/micron)
+        return spec, integration, trad, totvis
 
     def spectral2(self, solar_irradiance):
         """
@@ -394,7 +377,6 @@ class Spectra(object):
         # inttotal should be just integration[:,2]
         ledref = intensity_max[i]
         ledref = intensity_total[i]
-
 
     def calc_leds(self, solar_irradiance,
                   total_solar_irradiance_daily_max,
