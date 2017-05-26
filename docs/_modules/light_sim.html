@@ -1,6 +1,6 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
    
@@ -34,7 +34,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">
+  <body>
   <div class="document">
     
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -87,6 +87,7 @@
   <h1>Source code for light_sim</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">from</span> <span class="nn">pysolar</span> <span class="k">import</span> <span class="n">solar</span>
 <span class="kn">from</span> <span class="nn">world_temp_sim</span> <span class="k">import</span> <span class="n">TempSim</span>
 <span class="kn">from</span> <span class="nn">Spectra</span> <span class="k">import</span> <span class="n">Spectra</span>
 <span class="n">iso8601</span> <span class="o">=</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H:%M:%S&quot;</span>
@@ -150,12 +151,14 @@
         <span class="n">spectral_intensity_max</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">122</span>
         <span class="n">lc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">longitudal_correction</span><span class="p">()</span>
         <span class="n">temp_rh</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="n">temps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tempsim</span><span class="o">.</span><span class="n">get_daily_temps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latitude</span><span class="p">,</span> <span class="n">lon</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">longitude</span><span class="p">)</span>
+        <span class="n">pressure</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pressure_kPa</span><span class="p">()</span>
+
         <span class="k">for</span> <span class="n">day</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">366</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">hour</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">):</span>
                 <span class="n">solarnoon</span> <span class="o">=</span> <span class="mi">12</span> <span class="o">-</span> <span class="n">lc</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">equation_of_time_correction</span><span class="p">(</span><span class="n">day</span><span class="p">)</span>
                 <span class="n">solar_declination</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solar_declination</span><span class="p">(</span><span class="n">day</span><span class="p">)</span>
                 <span class="n">zenith_angle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">zenith_angle</span><span class="p">(</span><span class="n">solar_declination</span><span class="p">,</span> <span class="n">hour</span><span class="p">,</span> <span class="n">solarnoon</span><span class="p">)</span>
-                <span class="n">pressure</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pressure</span><span class="p">()</span>
                 <span class="n">irradiance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">diffuse_sky_irradiance</span><span class="p">(</span><span class="n">pressure</span><span class="p">,</span> <span class="n">zenith_angle</span><span class="p">)</span>
                 <span class="n">yearly_solarmax</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">yearly_solarmax</span><span class="p">,</span> <span class="n">irradiance</span><span class="p">)</span>
                 <span class="n">daily_solarmax</span><span class="p">[</span><span class="n">day</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">daily_solarmax</span><span class="p">[</span><span class="n">day</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">irradiance</span><span class="p">)</span>
@@ -167,17 +170,17 @@
                 <span class="c1"># tou is atmospheric tramsmission :</span>
                 <span class="c1"># overcast = 0.4 --&gt; from Liu and Jordan (1960)</span>
                 <span class="c1"># clear = 0.70 --&gt; as given in Gates (1980)</span>
-                <span class="n">mintemp</span><span class="p">,</span> <span class="n">maxtemp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tempsim</span><span class="o">.</span><span class="n">avgdailyt</span><span class="p">[</span><span class="n">day</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">mintemp</span><span class="p">,</span> <span class="n">maxtemp</span> <span class="o">=</span> <span class="n">temps</span><span class="p">[</span><span class="n">day</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
                 <span class="k">if</span> <span class="n">halfdaylength</span> <span class="o">&lt;</span> <span class="mf">10.5</span><span class="p">:</span>
                     <span class="n">d1</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">day</span> <span class="o">&gt;</span> <span class="mi">365</span> <span class="k">else</span> <span class="n">day</span> <span class="o">+</span> <span class="mi">1</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_ces</span><span class="p">:</span>
-                        <span class="n">tomorrow_mintemp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tempsim</span><span class="o">.</span><span class="n">avgdailyt</span><span class="p">[</span><span class="n">d1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="n">tomorrow_mintemp</span> <span class="o">=</span> <span class="n">temps</span><span class="p">[</span><span class="n">d1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
                         <span class="n">temp_rh</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_temp_rh</span><span class="p">(</span><span class="n">mintemp</span><span class="p">,</span> <span class="n">maxtemp</span><span class="p">,</span> <span class="n">tomorrow_mintemp</span><span class="p">,</span> <span class="n">sunrise</span><span class="p">,</span> <span class="n">sunset</span><span class="p">))</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">temp_rh</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_sine_temp_rh</span><span class="p">(</span><span class="n">mintemp</span><span class="p">,</span> <span class="n">maxtemp</span><span class="p">))</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">temp_rh</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_sine_temp_rh</span><span class="p">(</span><span class="n">mintemp</span><span class="p">,</span> <span class="n">maxtemp</span><span class="p">))</span>
-                <span class="n">tao</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_tao</span><span class="p">(</span><span class="n">day</span><span class="p">)</span>
+
                 <span class="n">air_temp</span> <span class="o">=</span> <span class="p">(</span><span class="n">mintemp</span> <span class="o">+</span> <span class="n">maxtemp</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
 
                 <span class="n">spectra</span> <span class="o">=</span> <span class="n">Spectra</span><span class="p">()</span>
@@ -186,10 +189,11 @@
                 <span class="n">spectra</span><span class="o">.</span><span class="n">units</span> <span class="o">=</span> <span class="mi">1</span>
                 <span class="n">spectra</span><span class="o">.</span><span class="n">watvap</span> <span class="o">=</span> <span class="mi">1</span>
                 <span class="n">spectra</span><span class="o">.</span><span class="n">press</span> <span class="o">=</span> <span class="n">pressure</span>
-
                 <span class="n">spectra</span><span class="o">.</span><span class="n">year</span> <span class="o">=</span> <span class="mi">2012</span>
                 <span class="n">spectra</span><span class="o">.</span><span class="n">dayofyear</span> <span class="o">=</span> <span class="n">day</span>
+                <span class="n">spectra</span><span class="o">.</span><span class="n">tau500</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_tao</span><span class="p">(</span><span class="n">day</span><span class="p">)</span>
                 <span class="n">spectra</span><span class="o">.</span><span class="n">temp</span> <span class="o">=</span> <span class="n">temp_rh</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">spectra</span><span class="o">.</span><span class="n">timezone</span> <span class="o">=</span> <span class="o">-</span><span class="mi">11</span>
 
                 <span class="n">spectra</span><span class="o">.</span><span class="n">hour</span> <span class="o">=</span> <span class="n">hour</span>
                 <span class="n">spec</span><span class="p">,</span> <span class="n">integration</span><span class="p">,</span> <span class="n">groups</span><span class="p">,</span> <span class="n">trad</span><span class="p">,</span> <span class="n">totvis</span> <span class="o">=</span> <span class="n">spectra</span><span class="o">.</span><span class="n">calc_all_spectral</span><span class="p">(</span><span class="n">irradiance</span><span class="p">)</span>
@@ -290,8 +294,8 @@
 
         <span class="k">return</span> <span class="n">tao</span></div>
 
-    <span class="nd">@staticmethod</span>
-<div class="viewcode-block" id="LightSim.relative_humidity"><a class="viewcode-back" href="../light_sim.html#light_sim.LightSim.relative_humidity">[docs]</a>    <span class="k">def</span> <span class="nf">relative_humidity</span><span class="p">(</span><span class="n">mintemp</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">temp</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<div class="viewcode-block" id="LightSim.relative_humidity"><a class="viewcode-back" href="../light_sim.html#light_sim.LightSim.relative_humidity">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">relative_humidity</span><span class="p">(</span><span class="n">mintemp</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">temp</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        calculates saturated water vapor concentration with a minimum temperature for the day and temperature.</span>
 <span class="sd">        from FAO Allen, 1985 ??</span>
@@ -309,8 +313,14 @@
         <span class="n">rh</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">eos</span> <span class="o">/</span> <span class="n">eo</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">rh</span> <span class="o">*</span> <span class="mf">100.0</span></div>
 
-<div class="viewcode-block" id="LightSim.pressure"><a class="viewcode-back" href="../light_sim.html#light_sim.LightSim.pressure">[docs]</a>    <span class="k">def</span> <span class="nf">pressure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="mf">101.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">altitude</span> <span class="o">/</span> <span class="mf">8200.0</span><span class="p">)</span></div>
+<div class="viewcode-block" id="LightSim.pressure_kPa"><a class="viewcode-back" href="../light_sim.html#light_sim.LightSim.pressure_kPa">[docs]</a>    <span class="k">def</span> <span class="nf">pressure_kPa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">altitude</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        calculates the pressure in kPa</span>
+
+<span class="sd">        :rtype: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="p">((</span><span class="mf">44331.514</span> <span class="o">-</span> <span class="p">(</span><span class="n">altitude</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">altitude</span><span class="p">))</span> <span class="o">/</span> <span class="mf">11880.516</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mf">0.1902632</span><span class="p">)</span></div>
+        <span class="c1"># return 101.0 * np.exp(-1 * self.altitude / 8200.0)</span>
 
 <div class="viewcode-block" id="LightSim.diffuse_sky_irradiance"><a class="viewcode-back" href="../light_sim.html#light_sim.LightSim.diffuse_sky_irradiance">[docs]</a>    <span class="k">def</span> <span class="nf">diffuse_sky_irradiance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pressure</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">zenith_angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -324,8 +334,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">tao</span> <span class="o">=</span> <span class="mf">0.7</span>
         <span class="n">m</span> <span class="o">=</span> <span class="n">pressure</span> <span class="o">/</span> <span class="mf">101.3</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">zenith_angle</span><span class="p">)</span>
-        <span class="n">sp</span> <span class="o">=</span> <span class="n">SPO</span> <span class="o">*</span> <span class="nb">pow</span><span class="p">(</span><span class="n">tao</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
-        <span class="n">sd</span> <span class="o">=</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="nb">pow</span><span class="p">(</span><span class="n">tao</span><span class="p">,</span> <span class="n">m</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">zenith_angle</span><span class="p">)</span> <span class="o">*</span> <span class="n">SPO</span>
+        <span class="n">sp</span> <span class="o">=</span> <span class="n">SPO</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">tao</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
+        <span class="n">sd</span> <span class="o">=</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">tao</span><span class="p">,</span> <span class="n">m</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">zenith_angle</span><span class="p">)</span> <span class="o">*</span> <span class="n">SPO</span>
         <span class="c1"># beam irradiance on a horizontal surface</span>
         <span class="n">sb</span> <span class="o">=</span> <span class="n">sp</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">zenith_angle</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">sb</span> <span class="o">+</span> <span class="n">sd</span></div>
@@ -355,7 +365,7 @@
 
         <span class="n">v0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latrad</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">solar_declination</span><span class="p">)</span>
         <span class="n">v1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latrad</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">solar_declination</span><span class="p">)</span>
-        <span class="n">v2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">15</span> <span class="o">*</span> <span class="p">(</span><span class="n">time</span> <span class="o">-</span> <span class="n">solarnoon</span><span class="p">)</span> <span class="o">*</span> <span class="n">DEGREES_TO_RADIANS</span><span class="p">)</span>
+        <span class="n">v2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">15</span> <span class="o">*</span> <span class="p">(</span><span class="n">time</span> <span class="o">-</span> <span class="n">solarnoon</span><span class="p">)))</span>
 
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">v0</span> <span class="o">+</span> <span class="n">v1</span> <span class="o">*</span> <span class="n">v2</span><span class="p">)</span></div>
 
@@ -370,8 +380,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lonrad</span> <span class="o">/</span> <span class="mi">360</span> <span class="o">*</span> <span class="mi">24</span></div>
 
-    <span class="nd">@staticmethod</span>
-<div class="viewcode-block" id="LightSim.equation_of_time_correction"><a class="viewcode-back" href="../light_sim.html#light_sim.LightSim.equation_of_time_correction">[docs]</a>    <span class="k">def</span> <span class="nf">equation_of_time_correction</span><span class="p">(</span><span class="n">dayofyear</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<div class="viewcode-block" id="LightSim.equation_of_time_correction"><a class="viewcode-back" href="../light_sim.html#light_sim.LightSim.equation_of_time_correction">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">equation_of_time_correction</span><span class="p">(</span><span class="n">dayofyear</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        calculates equation of time correction typically a 15-20 minute correct depending on calendar day inputs</span>
 
@@ -380,15 +390,15 @@
 <span class="sd">        :return: eot correction</span>
 <span class="sd">        :rtype: float</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">et_calc</span> <span class="o">=</span> <span class="p">(</span><span class="mf">279.575</span> <span class="o">+</span> <span class="mf">0.9856</span> <span class="o">*</span> <span class="n">dayofyear</span><span class="p">)</span> <span class="o">*</span> <span class="n">DEGREES_TO_RADIANS</span>
+        <span class="n">et_calc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">279.575</span> <span class="o">+</span> <span class="mf">0.9856</span> <span class="o">*</span> <span class="n">dayofyear</span><span class="p">)</span>
         <span class="n">v0</span> <span class="o">=</span> <span class="o">-</span><span class="mf">104.7</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">et_calc</span><span class="p">)</span> <span class="o">+</span> <span class="mf">596.2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">et_calc</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mf">4.3</span>
         <span class="n">v1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mf">3.0</span> <span class="o">*</span> <span class="n">et_calc</span><span class="p">)</span> <span class="o">+</span> <span class="o">-</span><span class="mf">12.7</span>
         <span class="n">v2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mf">4.0</span> <span class="o">*</span> <span class="n">et_calc</span><span class="p">)</span> <span class="o">+</span> <span class="o">-</span><span class="mf">429.3</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">et_calc</span><span class="p">)</span>
         <span class="n">v3</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">et_calc</span><span class="p">)</span> <span class="o">+</span> <span class="mf">19.3</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mf">3.0</span> <span class="o">*</span> <span class="n">et_calc</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">v0</span> <span class="o">*</span> <span class="n">v1</span> <span class="o">*</span> <span class="n">v2</span> <span class="o">+</span> <span class="n">v3</span><span class="p">)</span> <span class="o">/</span> <span class="mf">3600.0</span></div>
 
-    <span class="nd">@staticmethod</span>
-<div class="viewcode-block" id="LightSim.solar_declination"><a class="viewcode-back" href="../light_sim.html#light_sim.LightSim.solar_declination">[docs]</a>    <span class="k">def</span> <span class="nf">solar_declination</span><span class="p">(</span><span class="n">dayofyear</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<div class="viewcode-block" id="LightSim.solar_declination"><a class="viewcode-back" href="../light_sim.html#light_sim.LightSim.solar_declination">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">solar_declination</span><span class="p">(</span><span class="n">dayofyear</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Calculate solar declination angle...</span>
 <span class="sd">        formula from Campbell and Norman, 1998 [Eq. 11.2]</span>
@@ -399,12 +409,28 @@
 <span class="sd">        :return: solar declination angle</span>
 <span class="sd">        :rtype: float</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">v1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">((</span><span class="mf">356.6</span> <span class="o">+</span> <span class="mf">0.9856</span> <span class="o">*</span> <span class="n">dayofyear</span><span class="p">)</span> <span class="o">*</span> <span class="n">DEGREES_TO_RADIANS</span><span class="p">)</span>
-        <span class="n">v2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">((</span><span class="mf">278.97</span> <span class="o">+</span> <span class="mf">0.9856</span> <span class="o">*</span> <span class="n">dayofyear</span> <span class="o">+</span> <span class="mf">1.9165</span> <span class="o">*</span> <span class="n">v1</span><span class="p">)</span> <span class="o">*</span> <span class="n">DEGREES_TO_RADIANS</span><span class="p">)</span>
+        <span class="n">v1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">356.6</span> <span class="o">+</span> <span class="mf">0.9856</span> <span class="o">*</span> <span class="n">dayofyear</span><span class="p">))</span>
+        <span class="n">v2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">278.97</span> <span class="o">+</span> <span class="mf">0.9856</span> <span class="o">*</span> <span class="n">dayofyear</span> <span class="o">+</span> <span class="mf">1.9165</span> <span class="o">*</span> <span class="n">v1</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="mf">0.39785</span> <span class="o">*</span> <span class="n">v2</span><span class="p">)</span></div>
 
-    <span class="nd">@staticmethod</span>
-<div class="viewcode-block" id="LightSim.stefan_boltzman_radiation_watts"><a class="viewcode-back" href="../light_sim.html#light_sim.LightSim.stefan_boltzman_radiation_watts">[docs]</a>    <span class="k">def</span> <span class="nf">stefan_boltzman_radiation_watts</span><span class="p">(</span><span class="n">airtemp</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<div class="viewcode-block" id="LightSim.solar_declination2"><a class="viewcode-back" href="../light_sim.html#light_sim.LightSim.solar_declination2">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">solar_declination2</span><span class="p">(</span><span class="n">dayofyear</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate solar declination angle...</span>
+<span class="sd">        formula from Campbell and Norman, 1998 [Eq. 11.2]</span>
+<span class="sd">        corrected for day of year (Jan. 1 = 1, etc.)</span>
+
+<span class="sd">        :param dayofyear: day of the year</span>
+<span class="sd">        :type: int</span>
+<span class="sd">        :return: solar declination angle</span>
+<span class="sd">        :rtype: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mf">23.45</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">((</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">365.0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">dayofyear</span> <span class="o">-</span> <span class="mi">81</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="LightSim.stefan_boltzman_radiation_watts"><a class="viewcode-back" href="../light_sim.html#light_sim.LightSim.stefan_boltzman_radiation_watts">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">stefan_boltzman_radiation_watts</span><span class="p">(</span><span class="n">airtemp</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Stefan-Boltzman law returns black body radiation in units of Watts/m2 emitted from body.</span>
 
@@ -424,7 +450,7 @@
       &copy;2016, Kurt Spokas, Gareth Dunstone.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

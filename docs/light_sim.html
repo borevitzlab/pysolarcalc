@@ -1,6 +1,6 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Temperature Simulator" href="world_temp_sim.html" />
@@ -36,7 +36,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">
+  <body>
   <div class="document">
     
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -109,7 +109,7 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>solar_declination</strong> &#8211; solar declination</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>solar_declination</strong> – solar declination</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">half a solar day</td>
 </tr>
@@ -137,7 +137,7 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dayofyear</strong> &#8211; day of the year to calculate for.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dayofyear</strong> – day of the year to calculate for.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">tao value</td>
 </tr>
@@ -158,8 +158,8 @@ formula given in Campbell and Norman (1998)</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>zenith_angle</strong> &#8211; zenith angle</li>
-<li><strong>pressure</strong> &#8211; air pressure</li>
+<li><strong>zenith_angle</strong> – zenith angle</li>
+<li><strong>pressure</strong> – air pressure</li>
 </ul>
 </td>
 </tr>
@@ -178,7 +178,7 @@ formula given in Campbell and Norman (1998)</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dayofyear</strong> &#8211; day of the year</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dayofyear</strong> – day of the year</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Type:</th><td class="field-body">int</td>
 </tr>
@@ -199,8 +199,8 @@ formula given in Campbell and Norman (1998)</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>mintemp</strong> &#8211; minimum temperature for the day</li>
-<li><strong>maxtemp</strong> &#8211; maximum temperature for the day</li>
+<li><strong>mintemp</strong> – minimum temperature for the day</li>
+<li><strong>maxtemp</strong> – maximum temperature for the day</li>
 </ul>
 </td>
 </tr>
@@ -222,11 +222,11 @@ From Cesaraccio et al. 2001 Int.J. Biometeorol. 161-169</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>mintemp</strong> &#8211; minimum temperature for the day</li>
-<li><strong>maxtemp</strong> &#8211; maximum temperature for the day</li>
-<li><strong>tomorrow_min</strong> &#8211; tomorrows minimum temperature</li>
-<li><strong>sunset</strong> &#8211; sunset time (solar time?)</li>
-<li><strong>sunrise</strong> &#8211; sunrise time (solar time?)</li>
+<li><strong>mintemp</strong> – minimum temperature for the day</li>
+<li><strong>maxtemp</strong> – maximum temperature for the day</li>
+<li><strong>tomorrow_min</strong> – tomorrows minimum temperature</li>
+<li><strong>sunset</strong> – sunset time (solar time?)</li>
+<li><strong>sunrise</strong> – sunrise time (solar time?)</li>
 </ul>
 </td>
 </tr>
@@ -264,9 +264,18 @@ translates to 4 minutes/degree</p>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="light_sim.LightSim.pressure">
-<code class="descname">pressure</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/light_sim.html#LightSim.pressure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#light_sim.LightSim.pressure" title="Permalink to this definition">§</a></dt>
-<dd></dd></dl>
+<dt id="light_sim.LightSim.pressure_kPa">
+<code class="descname">pressure_kPa</code><span class="sig-paren">(</span><em>altitude=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/light_sim.html#LightSim.pressure_kPa"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#light_sim.LightSim.pressure_kPa" title="Permalink to this definition">§</a></dt>
+<dd><p>calculates the pressure in kPa</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.5/library/functions.html#float" title="(in Python v3.5)">float</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="method">
 <dt id="light_sim.LightSim.read_weather_file">
@@ -277,7 +286,7 @@ translates to 4 minutes/degree</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fn</strong> &#8211; filename</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fn</strong> – filename</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
 </tr>
@@ -295,8 +304,8 @@ from FAO Allen, 1985 ??</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>mintemp</strong> &#8211; minumum temperature (C) for the day</li>
-<li><strong>temp</strong> &#8211; current temperature (C)</li>
+<li><strong>mintemp</strong> – minumum temperature (C) for the day</li>
+<li><strong>temp</strong> – current temperature (C)</li>
 </ul>
 </td>
 </tr>
@@ -313,14 +322,36 @@ from FAO Allen, 1985 ??</p>
 <dl class="staticmethod">
 <dt id="light_sim.LightSim.solar_declination">
 <em class="property">static </em><code class="descname">solar_declination</code><span class="sig-paren">(</span><em>dayofyear: int</em><span class="sig-paren">)</span> &#x2192; float<a class="reference internal" href="_modules/light_sim.html#LightSim.solar_declination"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#light_sim.LightSim.solar_declination" title="Permalink to this definition">§</a></dt>
-<dd><p>Calculate solar declination angle...
+<dd><p>Calculate solar declination angle…
 formula from Campbell and Norman, 1998 [Eq. 11.2]
 corrected for day of year (Jan. 1 = 1, etc.)</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dayofyear</strong> &#8211; day of the year</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dayofyear</strong> – day of the year</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body">int</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">solar declination angle</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.5/library/functions.html#float" title="(in Python v3.5)">float</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="light_sim.LightSim.solar_declination2">
+<em class="property">static </em><code class="descname">solar_declination2</code><span class="sig-paren">(</span><em>dayofyear: int</em><span class="sig-paren">)</span> &#x2192; float<a class="reference internal" href="_modules/light_sim.html#LightSim.solar_declination2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#light_sim.LightSim.solar_declination2" title="Permalink to this definition">§</a></dt>
+<dd><p>Calculate solar declination angle…
+formula from Campbell and Norman, 1998 [Eq. 11.2]
+corrected for day of year (Jan. 1 = 1, etc.)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dayofyear</strong> – day of the year</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Type:</th><td class="field-body">int</td>
 </tr>
@@ -340,7 +371,7 @@ corrected for day of year (Jan. 1 = 1, etc.)</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>airtemp</strong> &#8211; air temperature</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>airtemp</strong> – air temperature</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">watts/m2 radiation value</td>
 </tr>
@@ -359,9 +390,9 @@ corrected for day of year (Jan. 1 = 1, etc.)</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>solar_declination</strong> &#8211; </li>
-<li><strong>time</strong> &#8211; time for zenith</li>
-<li><strong>solarnoon</strong> &#8211; solar noon value</li>
+<li><strong>solar_declination</strong> – </li>
+<li><strong>time</strong> – time for zenith</li>
+<li><strong>solarnoon</strong> – solar noon value</li>
 </ul>
 </td>
 </tr>
@@ -400,7 +431,7 @@ corrected for day of year (Jan. 1 = 1, etc.)</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>solar_irradiance</strong> &#8211; solar irradiance as calculated in light_sim.py</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>solar_irradiance</strong> – solar irradiance as calculated in light_sim.py</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">tuple of spectrum, integrated irradiation, spectral groups, total radiation, and total visible light</td>
 </tr>
@@ -437,7 +468,7 @@ corrected for day of year (Jan. 1 = 1, etc.)</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>solar_irradiance</strong> &#8211; solar irradiance to drive calculation from</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>solar_irradiance</strong> – solar irradiance to drive calculation from</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">numpy array of spectrum and integrated spectral radiation</td>
 </tr>
@@ -486,7 +517,7 @@ Press, NY., page 3</p>
 Spencer, J. W. 1971. Fourier series representation of the
 position of the sun. Search 2 (5), page 172</p>
 <p>Universal Coordinated (Greenwich standard)
-Michalsky, J. 1988. The Astronomical Almanac&#8217;s algorithm for
+Michalsky, J. 1988. The Astronomical Almanac’s algorithm for
 approximate solar position (1950-2050). Solar Energy 40 (3), pp. 227-235.</p>
 </dd></dl>
 
@@ -593,8 +624,8 @@ Division 4721, Sandia National Laboratories, Albuquerque, NM.</p>
 <dl class="attribute">
 <dt id="Solarpos.Solarpos.prime">
 <code class="descname">prime</code><a class="headerlink" href="#Solarpos.Solarpos.prime" title="Permalink to this definition">§</a></dt>
-<dd><p>Prime and Unprime Prime converts Kt to normalized Kt&#8217;, etc.
-Unprime deconverts Kt&#8217; to Kt, etc.
+<dd><p>Prime and Unprime Prime converts Kt to normalized Kt’, etc.
+Unprime deconverts Kt’ to Kt, etc.
 Perez, R., P. Ineichen, Seals, R., &amp; Zelenka,
 A. 1990. Making full use of the clearness index for parameterizing hourly insolation conditions.
 Solar Energy 45 (2), pp. 111-114</p>
@@ -736,7 +767,7 @@ Division 4721, Sandia National Laboratories, Albuquerque, NM.</p>
       &copy;2016, Kurt Spokas, Gareth Dunstone.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

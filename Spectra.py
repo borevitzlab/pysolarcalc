@@ -378,7 +378,6 @@ class Spectra(object):
             integration[:, 2] /= (solar_irradiance * trad)
         return spec, integration, groups, trad, totvis
 
-
     def spectral2(self, solar_irradiance):
         """
         Should operate in the same way as SolarCalc/spectral.java:L25: S_spectral2
