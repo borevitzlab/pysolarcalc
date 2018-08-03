@@ -39,48 +39,6 @@ class Spectrum(object):
             integr.append(s.integral(*band))
         return integr
 
-
-class Light(object):
-    """
-    Loads a CSV describing a light source, interpolates the output, and
-    allows extraction to custom domains and optimisation to other spectra
-    """
-
-    def __init__(self, filename, interpolation='linear'):
-        df = pd.read_csv(filename)
-        self.channels = {}
-        wavelengths = df.values[:, 0]
-        for chan in df.columns[1:]:
-            values = df[chan]
-            self.channels[chan] = Spectrum(wavelengths, values).interpolated()
-
-    def __len__(self):
-        return len(self.channels)
-
-    def fit_wavelengths(self, wavelengths=None, minwl=None, maxwl=None, step=1):
-        '''Interpolate each channel to be defined over certian wavelengths'''
-        if wavelengths is None and minwl is None and maxwl is None:
-            raise ValueError("Either wavelengths or maxwl and minwl must be given")
-        if wavelengths is None:
-            wavelengths = np.arange(minwl, maxwl, step)
-        return np.vstack([chanfunc(wavelengths)
-                          for chanfunc in self.channels.values()]).T
-
-    def light_output(self, channel_settings, wavelengths=None, minwl=None, maxwl=None, step=1):
-        '''Gives the total output of the light unit over wavelengths given channel_settings'''
-        outputs = self.fit_wavelengths(wavelengths, minwl, maxwl, step)
-        return Spectrum(wavelengths, np.dot(outputs, channel_settings))
-
-
-    def optimise_settings(desired, cost_function=SimpleCost()):
-        '''Optimise channel settings aiming for desired, using cost_function'''
-        initial = np.ones(len(self.channels))
-        bounds = [(0.,1.)]*len(initial)
-        opt = optimize.minimize(cost_function, initial, (self, desired),
-                                options={"maxiter": 10000}, bounds=bounds)
-        return opt.x
-
-
 class CostFunc(object):
     '''Base class of cost functions, designed to be used with Light.optimise_settings'''
 
@@ -119,3 +77,45 @@ class BandCost(CostFunc):
         y = np.array(y.banded_integral(bands=self.bands))
         dist =  np.sum(np.abs(x - y) * self.weights)
         return dist
+
+class Light(object):
+    """
+    Loads a CSV describing a light source, interpolates the output, and
+    allows extraction to custom domains and optimisation to other spectra
+    """
+
+    def __init__(self, filename, interpolation='linear'):
+        df = pd.read_csv(filename)
+        self.channels = {}
+        wavelengths = df.values[:, 0]
+        for chan in df.columns[1:]:
+            values = df[chan]
+            self.channels[chan] = Spectrum(wavelengths, values).interpolated()
+
+    def __len__(self):
+        return len(self.channels)
+
+    def fit_wavelengths(self, wavelengths=None, minwl=None, maxwl=None, step=1):
+        '''Interpolate each channel to be defined over certian wavelengths'''
+        if wavelengths is None and minwl is None and maxwl is None:
+            raise ValueError("Either wavelengths or maxwl and minwl must be given")
+        if wavelengths is None:
+            wavelengths = np.arange(minwl, maxwl, step)
+        return np.vstack([chanfunc(wavelengths)
+                          for chanfunc in self.channels.values()]).T
+
+    def light_output(self, channel_settings, wavelengths=None, minwl=None, maxwl=None, step=1):
+        '''Gives the total output of the light unit over wavelengths given channel_settings'''
+        outputs = self.fit_wavelengths(wavelengths, minwl, maxwl, step)
+        return Spectrum(wavelengths, np.dot(outputs, channel_settings))
+
+
+    def optimise_settings(self, desired, cost_function=SimpleCost()):
+        '''Optimise channel settings aiming for desired, using cost_function'''
+        initial = np.ones(len(self.channels))
+        bounds = [(0.,1.)]*len(initial)
+        opt = optimize.minimize(cost_function, initial, (self, desired),
+                                options={"maxiter": 10000}, bounds=bounds)
+        return opt.x
+
+
