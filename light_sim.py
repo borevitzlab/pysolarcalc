@@ -1,36 +1,151 @@
 import numpy as np
 import datetime
-from pysolar import solar
+from pysolar import solar, util
+from timezonefinder import TimezoneFinder
+import pytz
 from world_temp_sim import TempSim
 from Spectra import Spectra
-iso8601 = "%Y-%m-%dT%H:%M:%S"
 
+iso8601 = "%Y-%m-%dT%H:%M:%S"
+from scipy.interpolate import CubicSpline
 DEGREES_TO_RADIANS = np.pi / 180.0
 RADIANS_TO_DEGREES = 180.0 / np.pi
 # solar constant?
 SPO = 1360.0
 
+import multiprocessing
+
+# daily sine freq
+daily_freq = 2 * np.pi / 1440.0
+
+
+WAVELENGTH_MICRONS = np.array(
+    [0.3, 0.305, 0.31, 0.315, 0.32, 0.325, 0.33, 0.335, 0.34, 0.345, 0.35, 0.36, 0.37, 0.38, 0.39, 0.4, 0.41, 0.42,
+     0.43, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49, 0.5, 0.51, 0.52, 0.53, 0.54, 0.55, 0.57, 0.593, 0.61, 0.63, 0.656,
+     0.6676, 0.69, 0.71, 0.718, 0.7244, 0.74, 0.7525, 0.7575, 0.7625, 0.7675, 0.78, 0.8, 0.816, 0.8237, 0.8315, 0.84,
+     0.86, 0.88, 0.905, 0.915, 0.925, 0.93, 0.937, 0.948, 0.965, 0.98, 0.9935, 1.04, 1.07, 1.1, 1.12, 1.13, 1.145,
+     1.161, 1.17, 1.2, 1.24, 1.27, 1.29, 1.32, 1.35, 1.395, 1.4425, 1.4625, 1.477, 1.497, 1.52, 1.539, 1.558, 1.578,
+     1.592, 1.61, 1.63, 1.646, 1.678, 1.74, 1.8, 1.86, 1.92, 1.96, 1.985, 2.005, 2.035, 2.065, 2.1, 2.148, 2.198, 2.27,
+     2.36, 2.45, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 4.0])
+TRANSMISSITY_COEFF = np.array(
+    [0.3, 0.305, 0.31, 0.315, 0.32, 0.325, 0.33, 0.335, 0.34,
+     0.345, 0.35, 0.36, 0.37, 0.38, 0.39, 0.4, 0.41, 0.42, 0.43, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49,
+     0.50, 0.51, 0.52, 0.53, 0.54, 0.55, 0.57, 0.593, 0.61, 0.63, 0.656, 0.668, 0.69, 0.71, 0.718, 0.724,
+     0.74, 0.753, 0.758, 0.763, 0.768, 0.78, 0.80, 0.816, 0.824, 0.832, 0.84, 0.86, 0.88, 0.905, 0.915, 0.925,
+     0.93, 0.937, 0.948, 0.965, 0.98, 0.994, 1.04, 1.07, 1.10, 1.12, 1.13, 1.145, 1.161, 1.17, 1.20, 1.24,
+     1.27, 1.29, 1.32, 1.35, 1.395, 1.443, 1.463, 1.477, 1.497, 1.52, 1.539, 1.558, 1.578, 1.592, 1.61, 1.63,
+     1.646, 1.678, 1.74, 1.80, 1.86, 1.92, 1.96, 1.985, 2.005, 2.035, 2.065, 2.10, 2.148, 2.198, 2.27, 2.36,
+     2.45, 2.50, 2.60, 2.70, 2.80, 2.90, 3.00, 3.10, 3.20, 3.30, 3.40, 3.50, 3.60, 3.70, 3.80, 3.90,
+     4.000])
+
+transmissivity_spline = CubicSpline(WAVELENGTH_MICRONS, TRANSMISSITY_COEFF)
+
+
+def day_both_calc(dayvalues):
+    day, temp_avg, temp_amp, temp_min, temp_delta, latitude, longitude, elevation, pressure, wavelengths = dayvalues
+    spectra = Spectra(latitude=latitude,
+                      longitude=longitude,
+                      elevation=elevation,
+                      pressure=pressure,
+                      wavelengths=wavelengths)
+    rvals = []
+    sunrise_dt, sunset_dt = util.get_sunrise_sunset(latitude, longitude, day)
+    # offset the sine so that the coldest time of the day is 30m after sunrise
+    # see http://cliffmass.blogspot.com.au/2011/01/what-is-coldest-time-of-day.html
+    sr_offset = 360 - (sunrise_dt.hour * 60.0 + sunrise_dt.minute + 30.0)
+
+    for d in daterange(day, minutes=1):
+        # this was wrong....
+        minute = d.minute + (d.hour * 60.0)
+
+        # temp = tavgamp * np.sin(minute * 7.27220521664304e-05 * 60.0)
+        temp = temp_avg - temp_amp * np.sin((minute + sr_offset) * daily_freq)
+        rh = 100 * np.exp((17.625 * temp_min) / (243.04 + temp_min)) / \
+                        np.exp((17.625 * temp) / (243.04 + temp))
+
+        tao = 0.7
+        if abs(latitude / np.pi * 180) < 60:
+            if temp_delta <= 10 and temp_delta != 0:
+                tao /= 11.0 - temp_delta
+        th = np.array([temp, rh], dtype=np.float64)
+        if sunrise_dt <= d <= sunset_dt:
+            rvals.append(np.append(th, spectra.calc_vis_spectral(d, temp, rh, tao)))
+        else:
+            rvals.append(np.append(th, np.append(0, np.zeros_like(wavelengths))))
+    return rvals
+
+
+def daterange(start_date: datetime.datetime, end_date: datetime.datetime = None, **kwargs):
+    if not len(kwargs):
+        kwargs['days'] = 1
+    end_date = end_date if end_date else start_date + datetime.timedelta(days=1)
+    while start_date < end_date:
+        start_date += datetime.timedelta(**kwargs)
+        yield start_date
+
+
+visble_wavelengths = np.linspace(0.4, 1.0, 20)
+
 
 class LightSim(object):
+    """
+    Light simulation.
+    Main simulation class for the time being.
+
+    can take a list of wavelengths in microns (float) or nanometers.
+    if any of the wavelengths are greater than 50, it assumes they are in nanomenters not microns.
+
+    """
+
     def __init__(self,
+                 start: datetime.datetime, end: datetime.datetime,
                  latitude: float = 0.0, longitude: float = 90.0, elevation: float = 0.0,
-                 number_of_wls: int = 10,
+                 wavelengths: list = visble_wavelengths,
+                 max_light_intensity: float = 1000.0,
                  cesfit: bool = False):
-        self.output_list = ["datetime", "simtime", "temp", "relativehumidity",
-                            *["LED{}".format(x) for x in range(number_of_wls)]]
+
         self.latitude = latitude
         self.longitude = longitude
+        # can use nm or microns...
+        if any(i > 50 for i in wavelengths):
+            wavelengths = np.array(wavelengths) / 1000
+        self.wavelengths = wavelengths
+        self.output_list = ["datetime", "temp", "relativehumidity", 'total_etr',
+                            *["{}nm".format(int(x * 1000)) for x in self.wavelengths]]
+
+
+        self.max_light_intensity = max_light_intensity
+
+        for x in range(60):
+            tz = TimezoneFinder().closest_timezone_at(lat=latitude, lng=longitude, delta_degree=x)
+            if tz is not None:
+                print("Timezone: {}".format(tz))
+                self.tz = pytz.timezone(tz)
+                self.start = start.replace(tzinfo=self.tz)
+                self.end = end.replace(tzinfo=self.tz)
+                break
+        else:
+            print("No Timezone, using utc")
+            self.start = start
+            self.end = end
+
         self.latrad = self.latitude * DEGREES_TO_RADIANS
         self.lonrad = self.longitude * DEGREES_TO_RADIANS
-        self.altitude = elevation
-        self.tempsim = TempSim()
-        self.temps = self.tempsim.get_daily_temps(self.latitude, self.longitude)
+        self.elevation = elevation
 
+        self.tempsim = TempSim(latitude, longitude)
+        self.year = 2012
         self.rain = np.array([])
 
         # this is for the climate change fitting from climateAPI
         # TODO: write the climateapi and solve that problem.
         self.use_ces = cesfit
+        self.monthly_temperature_spline = self.tempsim.get_splines()
+        # self.temp_hum_spline = self.calc_temp_humidity_spline()
+        # self.spectra_spline = self.calc_spectra_spline()
+        self.maxes = None
+        self.combined_spline = self.main_calc()
+
 
     def read_weather_file(self, fn):
         """
@@ -43,76 +158,148 @@ class LightSim(object):
         """
         pass
 
-    def main_calc(self, start, end):
-        try:
-            start = datetime.datetime.strptime(start, iso8601)
-            end = datetime.datetime.strptime(end, iso8601)
-        except Exception as e:
-            print("main_calc, given non-iso8601 start/end dates, format: {}".format(iso8601))
+    def ces_temp_fit(self, m, mintemp, maxtemp, tomorrow_min, sunrise, sunset):
+        alpha = maxtemp - mintemp
+        to = maxtemp - 0.39 * (maxtemp - tomorrow_min)
+        r = maxtemp - to
+        hx = sunset - 4.0
+        hp = sunrise + 24.0
+        b = (tomorrow_min - to) / np.sqrt(hp - sunset)
+        t = 0.0
 
-    def calc_minutes(self):
-        pass
+        time = float(m) / 24.0
+        if hx >= time > sunrise:
+            return mintemp + alpha * np.sin((time - sunrise) / (hx - sunrise) * np.pi / 2.0)
+        if hx < time < sunset:
+            return to + r * np.sin(np.pi / 2.0 + (time - hx) / 8.0 * np.pi)
+        if sunset < time <= hp:
+            return to + b * np.sqrt(time - sunset)
+        if time <= sunrise:
+            return to + b * np.sqrt(time + 24.0 - sunset)
+        return t
 
-    def calc_maxes(self):
-        yearly_solarmax = 0.0
-        daily_solarmax = np.zeros(365)
-        daily_tradmax = np.zeros(365)
+    def write_file(self, fn, **kwargs):
+        float_formatter = lambda x: "%.2f" % x
 
-        intmax = np.zeros(122)
+        def getval(d):
+            doyf = d.timetuple().tm_yday + d.minute / 1440.0 + d.hour / 24.0
+            # np.append(np.around(v[:2], 1), np.around(v[2:], 0))
+            return self.combined_spline(doyf)
 
-        spectral29_max = 0.0
-        spectral_intensity_max = [0] * 122
-        lc = self.longitudal_correction()
-        temp_rh = list()
-        temps = self.tempsim.get_daily_temps(self.latitude, lon=self.longitude)
-        pressure = self.pressure_kPa()
+        vgetval = np.vectorize(getval)
 
-        for day in range(1, 366):
-            for hour in range(8, 16):
-                solarnoon = 12 - lc - self.equation_of_time_correction(day)
-                solar_declination = self.solar_declination(day)
-                zenith_angle = self.zenith_angle(solar_declination, hour, solarnoon)
-                irradiance = self.diffuse_sky_irradiance(pressure, zenith_angle)
-                yearly_solarmax = max(yearly_solarmax, irradiance)
-                daily_solarmax[day-1] = max(daily_solarmax[day-1], irradiance)
+        dts = np.array(list(daterange(self.start, self.end, **kwargs)))
+        # r = vgetval(dts)
 
-                halfdaylength = self.calc_half_day_length(solar_declination)
-                sunrise, sunset = solarnoon - halfdaylength, solarnoon + halfdaylength
+        # np.savetxt(fn, r, delimiter=",")
+        with open(fn, 'w+') as f:
+            f.write(",".join(self.output_list) + "\n")
+            for d in dts:
+                vals = getval(d)
+                th = np.around(vals[:2], 1)
+                wvl = vals[2:].astype(int)
+                f.write(d.isoformat() + "," + ",".join(map(str, th))+ "," + ",".join(map(str, wvl)) + "\n")
 
-                # approximatation of sp
-                # tou is atmospheric tramsmission :
-                # overcast = 0.4 --> from Liu and Jordan (1960)
-                # clear = 0.70 --> as given in Gates (1980)
-                mintemp, maxtemp = temps[day-1]
-                if halfdaylength < 10.5:
-                    d1 = 0 if day > 365 else day + 1
-                    if self.use_ces:
-                        tomorrow_mintemp = temps[d1][0]
-                        temp_rh.extend(self.fit_temp_rh(mintemp, maxtemp, tomorrow_mintemp, sunrise, sunset))
-                    else:
-                        temp_rh.extend(self.fit_sine_temp_rh(mintemp, maxtemp))
-                else:
-                    temp_rh.extend(self.fit_sine_temp_rh(mintemp, maxtemp))
+    def calc_temp_humidity_spline(self):
+        """
+        calculates a temperature humidity spline with deltat.
 
-                air_temp = (mintemp + maxtemp) / 2
+        returns a spline of [temp[:], humidity[:], deltat[:]]
+        """
 
-                spectra = Spectra()
-                spectra.longitude = self.longitude
-                spectra.latitude = self.latitude
-                spectra.units = 1
-                spectra.watvap = 1
-                spectra.press = pressure
-                spectra.year = 2012
-                spectra.dayofyear = day
-                spectra.tau500 = self.calc_tao(day)
-                spectra.temp = temp_rh[-1][0]
-                spectra.timezone = -11
+        d = self.start
+        xx = list()
+        ff = [[], []]
 
-                spectra.hour = hour
-                spec, integration, groups, trad, totvis = spectra.calc_all_spectral(irradiance)
-                daily_tradmax[day-1] = max(daily_tradmax[day-1], trad)
-                np.maximum(intmax, integration[:, 2], intmax)
-        return daily_solarmax, daily_tradmax, intmax
+        while d < self.end:
+            # increment time by one day
+            d += datetime.timedelta(days=1)
+            # calculate sr ss
+            sunrise_dt, sunset_dt = util.get_sunrise_sunset(self.latitude, self.longitude, d)
+            sunrise = solar.get_solar_time(self.longitude, sunrise_dt)
+            sunset = solar.get_solar_time(self.longitude, sunset_dt)
+            doy = d.timetuple().tm_yday
+
+            temp, deltat = self.monthly_temperature_spline(doy)
+            deltat = abs(deltat)
+            mintemp, maxtemp = temp - deltat, temp + deltat
+            t_amplitude = (maxtemp - mintemp) / 2.0
+            t_avg = (mintemp + maxtemp) / 2.0
+
+            if self.use_ces:
+                tomorrow = d + datetime.timedelta(hours=24)
+                tdoy = tomorrow.timetuple().tm_yday
+                tomorrow_temp, tomorrow_deltat = self.monthly_temperature_spline(tdoy)
+                tomorrow_mintemp = tomorrow_temp - abs(tomorrow_deltat)
+                for m in range(1440):
+                    t = self.ces_temp_fit(m, mintemp, maxtemp, tomorrow_mintemp, sunrise, sunset)
+                    ff[0].append(t)
+                    ff[1].append(self.relative_humidity(mintemp, t))
+                    xx.append(doy + (m / 1440))
+            else:
+                for m in range(1440):
+                    # assume daily fluctuation mimics sinewave...period 24 h
+                    # freq = 2 * pi / 86400 sec = 7.27 E-5 sec-1
+                    t = t_avg - t_amplitude * np.sin(m * 7.27220521664304e-05 * 60.0)
+                    ff[0].append(t)
+                    ff[1].append(self.relative_humidity(mintemp, t))
+                    xx.append(doy + (m / 1440))
+
+        xx.append(xx[-1] + (1 / 1440))
+        ff[0].append(ff[0][0])
+        ff[1].append(ff[1][0])
+        ff = np.array(ff)
+        ff = np.swapaxes(ff, 0, 1)
+        xx = np.array(xx)
+        return CubicSpline(xx, ff)
+
+    def main_calc(self):
+        d = self.start
+        days = []
+        xx = [x.timetuple().tm_yday + x.minute / 1440.0 + x.hour / 24.0 for x in
+              daterange(self.start, self.end, minutes=1)]
+        xx = np.array(xx)
+
+        print("Calculating daily temp,hum,tao...")
+        while d < self.end:
+            d += datetime.timedelta(days=1)
+            doy = d.timetuple().tm_yday
+
+            temp, deltat = self.monthly_temperature_spline(doy)
+            deltat = abs(deltat)
+
+            mintemp, maxtemp = temp - deltat, temp + deltat
+            t_amplitude = (maxtemp - mintemp) / 2.0
+            t_avg = (mintemp + maxtemp) / 2.0
+            # need to clip temps
+            mintemp = min(max(1, mintemp), maxtemp)
+            maxtemp = max(maxtemp, mintemp)
+
+            days.append((d, t_avg, t_amplitude, mintemp, deltat,
+                         self.latitude,
+                         self.longitude,
+                         self.elevation,
+                         self.pressure,
+                         np.array(self.wavelengths)))
+
+        pool = multiprocessing.Pool(processes=4)
+
+        print("Calculating spectra...")
+        ff = pool.map(day_both_calc, days)
+        ff = [item for sublist in ff for item in sublist]
+        ff = np.array(ff)
+        self.maxes = ff[np.argmax(ff, axis=0), np.arange(len(ff[0]))]
+
+        # clip temperature and humidty
+        ff[:, 0] = np.clip(ff[:, 0], 1.0, 50.0)
+        ff[:, 1] = np.clip(ff[:, 1], 0, 100.0)
+
+        # for i, wvl in enumerate(self.wavelengths):
+        #     if self.maxes[3+i] != 0.0:
+        #         ff[:, 3+i] = ff[:, 3+i] / self.maxes[3+i] * self.max_light_intensity * transmissivity_spline(wvl)
+        # ff[:, 3:] = np.clip(ff[:, 3:], 0.0, self.max_light_intensity)
+
+        return CubicSpline(xx, ff)
 
     def fit_sine_temp_rh(self, maxtemp: float, mintemp: float) -> list:
         """
@@ -124,14 +311,9 @@ class LightSim(object):
         """
         avg = (mintemp + maxtemp) / 2
         amplitude = (maxtemp - mintemp) / 2.0
-        temp_rh = list()
-        for t in range(24 * 60 + 1):
-            # assume daily fluctuation mimics sinewave...period 24 h
-            # freq = 2 * pi / 86400 sec = 7.27 E-5 sec-1
-            temp = avg - amplitude * np.sin(t * 7.27E-5 * 60.0)
-            rh = self.relative_humidity(mintemp, temp)
-            temp_rh.append((temp, rh))
-        return temp_rh
+        # assume daily fluctuation mimics sinewave...period 24 h
+        # freq = 2 * pi / 86400 sec = 7.27 E-5 sec-1
+        return [avg - amplitude * np.sin(t * 7.27E-5 * 60.0) for t in range(24 * 60 + 1)]
 
     def fit_temp_rh(self, mintemp: float, maxtemp: float, tomorrow_min: float, sunrise: float, sunset: float) -> list:
         """
@@ -154,7 +336,7 @@ class LightSim(object):
         hp = sunrise + 24.0
         b = (tomorrow_min - to) / np.sqrt(hp - sunset)
         t = 0.0
-        temp_rh = list()
+        temps = list()
         for hr in range(0, 25):
             for min in range(0, 60):
                 time = hr + min / 60.0
@@ -166,11 +348,10 @@ class LightSim(object):
                     t = to + b * np.sqrt(time - sunset)
                 if time <= sunrise:
                     t = to + b * np.sqrt(time + 24.0 - sunset)
-                r = self.relative_humidity(mintemp, t)
-                temp_rh.append((t, r))
-        return temp_rh
+                temps.append(t)
+        return temps
 
-    def calc_tao(self, dayofyear: int) -> float:
+    def calc_tao(self, dayofyear: int, deltat: float) -> float:
         """
         calculates tao from cloud cover (rain) and deltaT values.
 
@@ -179,7 +360,6 @@ class LightSim(object):
         :rtype: float
         """
         tao = 0.70
-        cur_deltat = self.tempsim.deltat[dayofyear]
         # only do cloudcover if
         if len(self.rain):
             cur = self.rain[dayofyear]
@@ -202,8 +382,8 @@ class LightSim(object):
         # if air temperature rise is less than 10 --> lower tao value
         # unless near poles.
         if abs(self.latitude / np.pi * 180) < 60:
-            if cur_deltat <= 10 and cur_deltat != 0:
-                tao /= 11.0 - cur_deltat
+            if deltat <= 10 and deltat != 0:
+                tao /= 11.0 - deltat
 
         return tao
 
@@ -219,21 +399,33 @@ class LightSim(object):
         :rtype: float
         """
 
-        # these values shouldnt be under 0
-        eo = max(0.6108 * np.exp((17.27 * temp) / (temp + 273.3)), 0.0)
-        eos = max(0.6108 * np.exp((17.27 * mintemp) / (mintemp + 273.3)), 0.0)
-        # rh shouldnt be over 1.0
-        rh = min(eos / eo, 1.0)
+        # # these values shouldnt be under 0
+        # eo = max(0.6108 * np.exp((17.27 * temp) / (temp + 273.3)), 0.0)
+        #
+        # eos = max(0.6108 * np.exp((17.27 * mintemp) / (mintemp + 273.3)), 0.0)
+        # # rh shouldnt be over 1.0
+        # rh = min(eos / eo, 1.0)
+        rh = np.exp((17.625 * mintemp) / (243.04 + mintemp)) / np.exp((17.625 * temp) / (243.04 + temp))
         return rh * 100.0
 
-    def pressure_kPa(self, altitude=None):
+    @property
+    def pressure_kPa(self):
         """
         calculates the pressure in kPa
 
         :rtype: float
         """
-        return 0.1 * ((44331.514 - (altitude or self.altitude)) / 11880.516) ** (1 / 0.1902632)
+        return 0.1 * ((44331.514 - self.elevation) / 11880.516) ** (1 / 0.1902632)
         # return 101.0 * np.exp(-1 * self.altitude / 8200.0)
+
+    @property
+    def pressure(self):
+        """
+        calculates the pressure in Pa
+
+        :rtype: float
+        """
+        return self.pressure_kPa * 1000.0
 
     def diffuse_sky_irradiance(self, pressure: float, zenith_angle: float) -> float:
         """
@@ -339,8 +531,6 @@ class LightSim(object):
         :rtype: float
         """
         return 23.45 * np.sin((2 * np.pi / 365.0) * (dayofyear - 81))
-
-
 
     @staticmethod
     def stefan_boltzman_radiation_watts(airtemp: float) -> float:

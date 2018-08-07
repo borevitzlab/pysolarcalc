@@ -30,7 +30,7 @@ class Solarpos(object):
                  minute=None,
                  second=None,
                  interval=0.0,
-                 timezone=None,
+                 timezone=0.0,
                  temp=None,
                  tilt=None,
                  aspect=None,
@@ -62,7 +62,6 @@ class Solarpos(object):
         self._press = 1013.0 if press is None else press
         self._temp = 15.0 if temp is None else temp
         self._tilt = -10.0 if tilt is None else tilt
-        self._timezone = -99.0
         self._sbwid = 7.6
         self._sbrad = 31.7
         self._sbsky = 0.04
@@ -356,7 +355,6 @@ class Solarpos(object):
         """
         Solar azimuth angle Iqbal, M. 1983. An Introduction to Solar Radiation.
         Academic Press, NY., page 15
-
         """
         ce = np.cos(np.radians(self.elevetr))
         se = np.sin(np.radians(self.elevetr))
