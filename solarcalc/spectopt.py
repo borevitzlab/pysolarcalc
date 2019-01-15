@@ -62,6 +62,7 @@ class SimpleCost(CostFunc):
             dist =  np.sum(np.abs(x.values - y.values) * cost.values)
         return dist
 
+
 class BandCost(CostFunc):
     '''Cost defined by the differnce in banded integrals along wavelengths, possibly weighted'''
     def __init__(self, bands=None, weights=None):
@@ -78,6 +79,7 @@ class BandCost(CostFunc):
         dist =  np.sum(np.abs(x - y) * self.weights)
         return dist
 
+
 class Light(object):
     """
     Loads a CSV describing a light source, interpolates the output, and
@@ -87,10 +89,10 @@ class Light(object):
     def __init__(self, filename, interpolation='linear'):
         df = pd.read_csv(filename)
         self.channels = {}
-        wavelengths = df.values[:, 0]
+        self.wavelengths = df.values[:, 0]
         for chan in df.columns[1:]:
             values = df[chan]
-            self.channels[chan] = Spectrum(wavelengths, values).interpolated()
+            self.channels[chan] = Spectrum(self.wavelengths, values).interpolated()
 
     def __len__(self):
         return len(self.channels)
@@ -112,10 +114,8 @@ class Light(object):
 
     def optimise_settings(self, desired, cost_function=SimpleCost()):
         '''Optimise channel settings aiming for desired, using cost_function'''
-        initial = np.ones(len(self.channels))
+        initial = np.ones(len(self.channels))/2
         bounds = [(0.,1.)]*len(initial)
         opt = optimize.minimize(cost_function, initial, (self, desired),
                                 options={"maxiter": 10000}, bounds=bounds)
         return opt.x
-
-
