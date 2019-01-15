@@ -174,7 +174,7 @@ class Spectra(object):
             return np.zeros(41, dtype=np.float64)
 
         # tricky! the way that extraterrestrial_irrad is calculated is by getting the erv.
-        etr_total = util.extraterrestrial_irrad(when, self.latitude, self.longitude)
+        etr_total = util.extraterrestrial_irrad(self.latitude, self.longitude, when)
         erv = etr_total / 1367.0
 
         # these are almost identical. opt for pysolar
@@ -257,9 +257,9 @@ class Spectra(object):
         # # spec[:, 2] /= (solar_irradiance * trad)
         # vrad = spec[14:55, 2]
 
-        # etr_total = util.extraterrestrial_irrad(dt, self.latitude, self.longitude)
+        # etr = util.extraterrestrial_irrad(self.latitude, self.longitude, when)
         # only return direct and visible
-        return spec[14:55, 3]
+        return np.append([etr_total]+spec[14:55, 3])
 
     def calc_vis_spectral(self,
                           when: datetime.datetime,
@@ -269,6 +269,7 @@ class Spectra(object):
 
         if temperature < 1:
             temperature = 1
+    
 
         solar_altitude_deg = solar.get_altitude(self.latitude, self.longitude, when,
                                                 elevation=self.elevation,
@@ -280,9 +281,10 @@ class Spectra(object):
         if zenref > 90:
             print("Zenref greater than 90 wtf!!! : {}".format(zenref))
             return np.zeros(self.n_wvls+1, dtype=np.float64)
-
         # tricky! the way that extraterrestrial_irrad is calculated is by getting the erv.
-        etr_total = util.extraterrestrial_irrad(when, self.latitude, self.longitude)
+        etr_total = util.extraterrestrial_irrad(self.latitude, self.longitude, when=when)
+        if when.hour == 12 and when.minute == 0:
+            print(when,"\t", temperature, "\t",relative_humidity, "\t",etr_total)
         erv = etr_total / 1367.0
         # these are almost identical. DO NOT OPT FOR PYSOLAR UNTIL THEY HAVE IMPLEMENTED
         # Airmass Kasten, F. and Young, A. 1989. Revised optical air mass tables
@@ -302,16 +304,15 @@ class Spectra(object):
         ozone_mass = 1.003454 / np.sqrt((pow(cz, 2)) + 0.006908)
 
 
-        # if not 0 <= abs(solar_altitude_deg) <= 90:
-        #     # print("NIGHTTIME : {}".format(solar_altitude_deg))
-        #     # print("Solar alt out of range!!! : {}".format(solar_altitude_deg))
-        #     # print(when, self.pressure, temperature, solar_altitude_deg, amass)
-        #     return np.zeros(self.n_wvls+1, dtype=np.float64)
-
-        if not 0 <= amass < 1000:
+        if not 0 <= abs(solar_altitude_deg) <= 90:
             # print("NIGHTTIME : {}".format(solar_altitude_deg))
             # print("Solar alt out of range!!! : {}".format(solar_altitude_deg))
-            print(when, temperature, solar_altitude_deg, amass)
+            # print(when, self.pressure, temperature, solar_altitude_deg, amass)
+            return np.zeros(self.n_wvls+1, dtype=np.float64)
+
+        if not 0 <= amass < 1000:
+            print("NIGHTTIME : {}".format(solar_altitude_deg))
+            print("Solar alt out of range!!! : {}".format(solar_altitude_deg))
             return np.zeros(self.n_wvls + 1, dtype=np.float64)
 
         def calc(wvl):
@@ -351,15 +352,11 @@ class Spectra(object):
 
         direct_spec = vectorized_calc(self.wavelengths)
 
-        return np.append([etr_total], direct_spec)
+        def integrate(wl_delta, direct, prev_direct):
+            return wl_delta * (direct + prev_direct)
 
-        def integrate_direct(self, etr_and_visible_direct):
-            etr_total, direct_spec = etr_and_visible_direct[0], etr_and_visible_direct[1:]
-
-            def integrate(wl_delta, direct, prev_direct):
-                return wl_delta * (direct + prev_direct)
-
-            vectorized_integrate = np.vectorize(integrate)
-            v = vectorized_integrate(np.append([0], np.diff(self.wavelengths)),
-                                     direct_spec, np.append([0], direct_spec[:-1]))
-            return np.append([etr_total], v)
+        vectorized_integrate = np.vectorize(integrate)
+        integrated_d = vectorized_integrate(np.append([0], np.diff(self.wavelengths)),
+                                            direct_spec,
+                                            np.append([0], direct_spec[:-1]))
+        return np.append([etr_total], integrated_d)
