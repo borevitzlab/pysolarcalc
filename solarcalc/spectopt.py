@@ -15,8 +15,8 @@ class Spectrum(object):
     """Holds a spectral density curve, also integrate and interpolate"""
 
     def __init__(self, wavelengths, values):
-        self.wavelengths = wavelengths
-        self.values = values
+        self.wavelengths = np.array(wavelengths).astype(float)
+        self.values = np.array(values).astype(float)
 
     def interpolated(self, method='linear'):
         '''Create a function to interpolate spectrum to new wavelengths'''
@@ -39,13 +39,18 @@ class Spectrum(object):
             integr.append(s.integral(*band))
         return integr
 
+    def __getitem__(self, item):
+        if isinstance(item, slice):
+            keep = np.logical_and(self.wavelengths >= item.start, self.wavelengths <= item.stop)
+            return Spectrum(self.wavelengths[keep], self.values[keep])
+
+
 class CostFunc(object):
     '''Base class of cost functions, designed to be used with Light.optimise_settings'''
 
     def __call__(self, weights, light, desired):
         got = light.light_output(weights, wavelengths=desired.wavelengths)
         cost = self._cost(got, desired)
-        print(type(self).__name__, weights, cost)
         return cost
 
 class SimpleCost(CostFunc):
