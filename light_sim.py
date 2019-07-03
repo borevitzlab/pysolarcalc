@@ -5,6 +5,7 @@ from timezonefinder import TimezoneFinder
 import pytz
 from world_temp_sim import TempSim
 from Spectra import Spectra
+import os
 
 iso8601 = "%Y-%m-%dT%H:%M:%S"
 from scipy.interpolate import CubicSpline
@@ -110,8 +111,8 @@ class LightSim(object):
         if any(i > 50 for i in wavelengths):
             wavelengths = np.array(wavelengths) / 1000
         self.wavelengths = wavelengths
-        self.output_list = ["datetime", "temp", "relativehumidity", 'total_etr',
-                            *["{}nm".format(int(x * 1000)) for x in self.wavelengths]]
+        self.output_list = ["datetime", "modeldate", "temp", "relativehumidity", 'total_etr',
+                            *["{}".format(int(x * 1000)) for x in self.wavelengths]]
 
 
         self.max_light_intensity = max_light_intensity
@@ -146,6 +147,32 @@ class LightSim(object):
         self.maxes = None
         self.combined_spline = self.main_calc()
 
+    def write_file(self, fn,output_start=None, **kwargs):
+        if output_start is None:
+            output_start = self.start
+        float4prec = lambda x: "{0:.4f}".format(x)
+        float2prec = lambda x: "{0:.2f}".format(x)
+
+        def getval(d):
+            doyf = d.timetuple().tm_yday + d.minute / 1440.0 + d.hour / 24.0
+            # np.append(np.around(v[:2], 1), np.around(v[2:], 0))
+            return self.combined_spline(doyf)
+
+        vgetval = np.vectorize(getval)
+
+        dtso = np.array(list(daterange(output_start, output_start + (self.end - self.start), **kwargs)))
+        dts = np.array(list(daterange(self.start, self.end, **kwargs)))
+        # r = vgetval(dts)
+
+        # np.savetxt(fn, r, delimiter=",")
+        with open(fn, 'w+') as f:
+            f.write(",".join(self.output_list) + "\n")
+            for i,d in enumerate(dts):
+                vals = getval(d)
+                th = np.around(vals[:2], 1)
+                wvl = vals[2:].astype(float)
+                f.write(dtso[i].isoformat()+",\t"+ d.isoformat() + ",\t" + ",\t".join(map(float2prec, th))+ ",\t" + ",\t\t".join(map(float4prec, wvl)) + "\n")
+
 
     def read_weather_file(self, fn):
         """
@@ -177,28 +204,6 @@ class LightSim(object):
         if time <= sunrise:
             return to + b * np.sqrt(time + 24.0 - sunset)
         return t
-
-    def write_file(self, fn, **kwargs):
-        float_formatter = lambda x: "%.2f" % x
-
-        def getval(d):
-            doyf = d.timetuple().tm_yday + d.minute / 1440.0 + d.hour / 24.0
-            # np.append(np.around(v[:2], 1), np.around(v[2:], 0))
-            return self.combined_spline(doyf)
-
-        vgetval = np.vectorize(getval)
-
-        dts = np.array(list(daterange(self.start, self.end, **kwargs)))
-        # r = vgetval(dts)
-
-        # np.savetxt(fn, r, delimiter=",")
-        with open(fn, 'w+') as f:
-            f.write(",".join(self.output_list) + "\n")
-            for d in dts:
-                vals = getval(d)
-                th = np.around(vals[:2], 1)
-                wvl = vals[2:].astype(int)
-                f.write(d.isoformat() + "," + ",".join(map(str, th))+ "," + ",".join(map(str, wvl)) + "\n")
 
     def calc_temp_humidity_spline(self):
         """
@@ -282,11 +287,13 @@ class LightSim(object):
                          self.pressure,
                          np.array(self.wavelengths)))
 
-        pool = multiprocessing.Pool(processes=4)
+        pool = multiprocessing.Pool(processes=int(os.environ.get("J", multiprocessing.cpu_count())))
 
         print("Calculating spectra...")
+        # ff = [day_both_calc(x) for x in days]
         ff = pool.map(day_both_calc, days)
         ff = [item for sublist in ff for item in sublist]
+
         ff = np.array(ff)
         self.maxes = ff[np.argmax(ff, axis=0), np.arange(len(ff[0]))]
 
