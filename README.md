@@ -8,7 +8,10 @@ Follows formulae largely from [Spokas and Forcella (2006)](https://pubag.nal.usd
 
 
 ```bash
-# pip install -r requirements.txt && ./setup.py install
+# pip install -r requirements.txt && ./setup.py install OR
+# conda env create -f dev-environment.yml && ./setup.py install
+
+
 pysolarcalc --place $lat $lon $elev \
 	--light data/spectra/growtainer-wm2.csv  \
 	--start 2019-01-01 \
