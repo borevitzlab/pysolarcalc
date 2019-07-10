@@ -1,0 +1,7 @@
+scipy
+numpy
+pysolar
+python-dateutil
+pytz
+timezonefinder
+pandas

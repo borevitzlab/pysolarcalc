@@ -2,6 +2,7 @@ from scipy.interpolate import CubicSpline
 import gzip
 import numpy as np
 import datetime
+from sys import stderr
 
 
 def get_doy(m):
@@ -165,7 +166,7 @@ class TempSim(object):
 
         for month, doy in xx:
             if float(self.diurnaltemp[lon2, lat2, month]) == -9999:
-                print("Invalid Delta T -- approximating with Geerts (2002)")
+                print("Invalid Delta T -- approximating with Geerts (2002)", file=stderr)
                 # ll = abs(lat2 + 0.001)
                 ll = abs(self.lat + 0.001)
                 tropics = ll < 40
@@ -192,7 +193,7 @@ class TempSim(object):
                     ff[1].append(monthly_delta(month)/2)
                 break
         else:
-            print("Have data!!! Calulating temp.")
+            print("Have data!!! Calulating temp.", file=stderr)
             for month, doy in xx:
                 t = self.avgtemp[month % len(self.avgtemp)]
                 if self._climate_change:
@@ -281,7 +282,7 @@ class TempSim(object):
         for m in range(12):
             # TODO: possible semantic bug! should lon2 and lat2 be swapped here?
             if float(self.diurnaltemp[lat2, lon2, m]) / 10.0 == -999.90:
-                print("Invalid Delta T -- approximating with Geerts (2002)")
+                print("Invalid Delta T -- approximating with Geerts (2002)", file=stderr)
                 ll = abs(lat2 + 0.001)
                 tropics = ll < 40
 
@@ -326,7 +327,7 @@ class TempSim(object):
         :return: 366,2 shape array of temperature min,max temperatures for each day.
         """
         if not orglon and not lon:
-            print("no longitude or orglon")
+            print("no longitude or orglon", file=stderr)
             return
         if orglon and orglon < 0:
             orglon += 360
@@ -387,7 +388,7 @@ class TempSim(object):
             # TODO: possible semantic bug! should lon2 and lat2 be swapped here?
             if float(self.diurnaltemp[lat2, lon2, m]) / 10.0 == -999.90:
                 invalid = True
-                print("Invalid Delta T -- approximating with Geerts(2002)")
+                print("Invalid Delta T -- approximating with Geerts(2002)", file=stderr)
                 break
 
         if invalid:

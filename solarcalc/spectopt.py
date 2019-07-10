@@ -1,18 +1,16 @@
-# Copyright (c) 2018 Kevin Murray <foss@kdmurray.id.au>
-#
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
+# Copyright (c) 2018 Kevin Murray <foss@kdmurray.id.au> This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import numpy as np
 from scipy.interpolate import interp1d, UnivariateSpline
 from scipy import optimize
 from scipy.spatial import distance
+from sys import stderr
 import pandas as pd
 
 
 class Spectrum(object):
-    """Holds a spectral density curve, also integrate and interpolate"""
+    """Holds a spectral density curve, in Watts per m2 per nm, also integrate and interpolate"""
 
     def __init__(self, wavelengths, values):
         self.wavelengths = np.array(wavelengths).astype(float)
@@ -20,7 +18,22 @@ class Spectrum(object):
 
     def interpolated(self, method='linear'):
         '''Create a function to interpolate spectrum to new wavelengths'''
-        return interp1d(self.wavelengths, self.values, kind=method)
+        def interpfn(x):
+            minwl = min(self.wavelengths)
+            maxwl = max(self.wavelengths)
+            wl = self.wavelengths
+            vals = self.values
+            if any(x < minwl):
+                newwl = np.arange(min(x), minwl)
+                wl = np.append(newwl, wl)
+                vals = np.append(np.zeros_like(newwl), vals)
+            if any(x > maxwl):
+                newwl = np.arange(maxwl, max(x)+1)
+                wl = np.append(wl, newwl)
+                vals = np.append(vals, np.zeros_like(newwl))
+            interp = interp1d(wl, vals, kind=method)
+            return interp(x)
+        return interpfn
 
     def spline(self, k=1, s=0):
         '''Create a function to interpolate spectrum to new wavelengths with a spline'''
@@ -30,6 +43,18 @@ class Spectrum(object):
         '''Gives an interpolated version of self with 1nm bands'''
         wl = np.arange(min(self.wavelengths), max(self.wavelengths)+1, dtype=int)
         return Spectrum(wl, self.interpolated(method)(wl))
+
+    def par(self, left: int=400, right: int=700):
+        """Calculates PAR as integrated uE between `left` and `right` (default 400-700nm)"""
+        from scipy.constants import c, h, Avogadro
+        left = max(400, min(self.wavelengths))
+        right = min(700, max(self.wavelengths))
+        wl = np.arange(left, right+1, dtype=int)
+        wsqm = self.interpolated()(wl)
+        ep = h * (c / (wl/1e9)) # e = hcL^-1; w/ L = wl in meters 
+        n = wsqm / ep
+        par = np.sum(n/Avogadro)
+        return par * 1e6  #  1e6 is to make it uE, not E
 
     def banded_integral(self, bands):
         '''Gives the integral within each band, where bands are (lhs, rhs)'''
@@ -53,6 +78,7 @@ class CostFunc(object):
         cost = self._cost(got, desired)
         return cost
 
+    
 class SimpleCost(CostFunc):
     '''Simple sum of distances across all '''
     def __init__(self, cost=None):
@@ -64,7 +90,7 @@ class SimpleCost(CostFunc):
         if self.cost is None:
             dist =  np.sum(np.abs(x.values - y.values))
         else:
-            dist =  np.sum(np.abs(x.values - y.values) * cost.values)
+            dist =  np.sum(np.abs(x.values - y.values) * cost.one_nm().values)
         return dist
 
 
@@ -97,7 +123,7 @@ class Light(object):
         self.wavelengths = df.values[:, 0]
         for chan in df.columns[1:]:
             values = df[chan]
-            self.channels[chan] = Spectrum(self.wavelengths, values).interpolated()
+            self.channels[chan] = Spectrum(self.wavelengths, values)
 
     def __len__(self):
         return len(self.channels)
@@ -105,17 +131,22 @@ class Light(object):
     def fit_wavelengths(self, wavelengths=None, minwl=None, maxwl=None, step=1):
         '''Interpolate each channel to be defined over certian wavelengths'''
         if wavelengths is None and minwl is None and maxwl is None:
-            raise ValueError("Either wavelengths or maxwl and minwl must be given")
+            #raise ValueError("Either wavelengths or maxwl and minwl must be given")
+            wavelengths = self.wavelengths
         if wavelengths is None:
             wavelengths = np.arange(minwl, maxwl, step)
-        return np.vstack([chanfunc(wavelengths)
-                          for chanfunc in self.channels.values()]).T
+        return np.vstack([ch.interpolated()(wavelengths)
+                          for ch in self.channels.values()]).T
 
-    def light_output(self, channel_settings, wavelengths=None, minwl=None, maxwl=None, step=1):
+    def light_output(self, channel_settings, wavelengths=None):
         '''Gives the total output of the light unit over wavelengths given channel_settings'''
-        outputs = self.fit_wavelengths(wavelengths, minwl, maxwl, step)
+        if wavelengths is None:
+            wavelengths = self.wavelengths
+        outputs = self.fit_wavelengths(wavelengths)
         return Spectrum(wavelengths, np.dot(outputs, channel_settings))
 
+    def max_output(self):
+        return self.light_output(np.ones(len(self.channels)))
 
     def optimise_settings(self, desired, cost_function=SimpleCost()):
         '''Optimise channel settings aiming for desired, using cost_function'''

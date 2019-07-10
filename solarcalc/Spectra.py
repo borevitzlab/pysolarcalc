@@ -1,8 +1,10 @@
 import numpy as np
 import datetime
-from Solarpos import Solarpos
 from pysolar import solar, util, radiation, elevation
 from scipy.interpolate import CubicSpline
+from sys import stderr
+
+from .Solarpos import Solarpos
 
 # np.set_printoptions(precision=12)
 np.set_printoptions(suppress=True)
@@ -88,9 +90,9 @@ class Spectra(object):
         if low > high:
             low, high = high, low
         if low < WAVELENGTH_MICRONS[0]:
-            print("Low wavelength is under data, unpredictable results ahead")
+            print("Low wavelength is under data, unpredictable results ahead", file=stderr)
         if high > WAVELENGTH_MICRONS[-1]:
-            print("high wl is over source data, unpredictable results ahead")
+            print("high wl is over source data, unpredictable results ahead", file=stderr)
 
         self.low, self.high = low, high
         if not len(wavelengths):
@@ -170,7 +172,7 @@ class Spectra(object):
         zenref = 90 - abs(solar_altitude_deg)
 
         if zenref > 90:
-            print("Zenref greater than 90 wtf!!! : {}".format(zenref))
+            print("Zenref greater than 90 wtf!!! : {}".format(zenref), file=stderr)
             return np.zeros(41, dtype=np.float64)
 
         # tricky! the way that extraterrestrial_irrad is calculated is by getting the erv.
@@ -182,8 +184,8 @@ class Spectra(object):
         # amass = 1.0 / np.cos(np.radians(zenref)) + 0.50572 * pow(96.07995 - zenref, -1.6364)
 
         ampress = amass * self.pressure / 1013000
-        if amass < 0:
-            print(amass, solar_altitude_deg)
+        #if amass < 0:
+        #    print(amass, solar_altitude_deg)
 
         O3 = self.calc_ozone(int(when.timetuple().tm_yday))
 
@@ -279,12 +281,12 @@ class Spectra(object):
         zenref = 90 - abs(solar_altitude_deg)
 
         if zenref > 90:
-            print("Zenref greater than 90 wtf!!! : {}".format(zenref))
+            print("Zenref greater than 90 wtf!!! : {}".format(zenref), file=stderr)
             return np.zeros(self.n_wvls+1, dtype=np.float64)
         # tricky! the way that extraterrestrial_irrad is calculated is by getting the erv.
         etr_total = util.extraterrestrial_irrad(self.latitude, self.longitude, when=when)
-        if when.hour == 12 and when.minute == 0:
-            print(when,"\t", temperature, "\t",relative_humidity, "\t",etr_total)
+        #if when.hour == 12 and when.minute == 0:
+        #    print(when,"\t", temperature, "\t",relative_humidity, "\t",etr_total)
         erv = etr_total / 1367.0
         # these are almost identical. DO NOT OPT FOR PYSOLAR UNTIL THEY HAVE IMPLEMENTED
         # Airmass Kasten, F. and Young, A. 1989. Revised optical air mass tables
@@ -311,8 +313,7 @@ class Spectra(object):
             return np.zeros(self.n_wvls+1, dtype=np.float64)
 
         if not 0 <= amass < 1000:
-            print("NIGHTTIME : {}".format(solar_altitude_deg))
-            print("Solar alt out of range!!! : {}".format(solar_altitude_deg))
+            print("Solar alt out of range!!! : {}".format(solar_altitude_deg), file=stderr)
             return np.zeros(self.n_wvls + 1, dtype=np.float64)
 
         def calc(wvl):
@@ -359,4 +360,6 @@ class Spectra(object):
         integrated_d = vectorized_integrate(np.append([0], np.diff(self.wavelengths)),
                                             direct_spec,
                                             np.append([0], direct_spec[:-1]))
-        return np.append([etr_total], integrated_d)
+        #return np.append([etr_total], integrated_d)
+        # KDM testing
+        return np.append([etr_total], direct_spec)

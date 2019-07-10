@@ -1,0 +1,12 @@
+name: solarcalc-dev
+channels:
+  - conda-forge
+dependencies:
+    - python=3.*
+    - scipy
+    - numpy
+    - pysolar
+    - python-dateutil
+    - pytz
+    - timezonefinder
+    - pandas

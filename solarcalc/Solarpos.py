@@ -1,6 +1,7 @@
 import numpy as np
 from functools import wraps
 import datetime
+from sys import stderr
 
 DEGREES_TO_RADIANS = np.pi / 180.0
 RADIANS_TO_DEGREES = 180.0 / np.pi
@@ -411,7 +412,6 @@ class Solarpos(object):
         and approximation formula. Applied Optics 28 (22), pp. 4735-4738
         """
         amass = ampress = -1.0
-        print(self.zenref)
         if self.zenref < 93.0:
             amass = 1.0 / (np.cos(np.radians(self.zenref)) + 0.50572 * pow((96.07995 - self.zenref), -1.6364))
             ampress = amass * self.press / 1013.0

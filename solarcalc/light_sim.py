@@ -3,9 +3,11 @@ import datetime
 from pysolar import solar, util
 from timezonefinder import TimezoneFinder
 import pytz
-from world_temp_sim import TempSim
-from Spectra import Spectra
 import os
+from sys import stderr
+
+from .world_temp_sim import TempSim
+from .Spectra import Spectra
 
 iso8601 = "%Y-%m-%dT%H:%M:%S"
 from scipy.interpolate import CubicSpline
@@ -120,13 +122,13 @@ class LightSim(object):
         for x in range(60):
             tz = TimezoneFinder().closest_timezone_at(lat=latitude, lng=longitude, delta_degree=x)
             if tz is not None:
-                print("Timezone: {}".format(tz))
+                print("Timezone: {}".format(tz), file=stderr)
                 self.tz = pytz.timezone(tz)
                 self.start = start.replace(tzinfo=self.tz)
                 self.end = end.replace(tzinfo=self.tz)
                 break
         else:
-            print("No Timezone, using utc")
+            print("No Timezone, using utc", file=stderr)
             self.start = start
             self.end = end
 
@@ -265,7 +267,7 @@ class LightSim(object):
               daterange(self.start, self.end, minutes=1)]
         xx = np.array(xx)
 
-        print("Calculating daily temp,hum,tao...")
+        print("Calculating daily temp,hum,tao...", file=stderr)
         while d < self.end:
             d += datetime.timedelta(days=1)
             doy = d.timetuple().tm_yday
@@ -289,7 +291,7 @@ class LightSim(object):
 
         pool = multiprocessing.Pool(processes=int(os.environ.get("J", multiprocessing.cpu_count())))
 
-        print("Calculating spectra...")
+        print("Calculating spectra...", file=stderr)
         # ff = [day_both_calc(x) for x in days]
         ff = pool.map(day_both_calc, days)
         ff = [item for sublist in ff for item in sublist]
