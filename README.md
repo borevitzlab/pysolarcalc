@@ -17,5 +17,13 @@ pysolarcalc --place $lat $lon $elev \
 	--start 2019-01-01 \
 	--end 2019-12-31 \
 	--chamber-start 2020-01-01 \
-	--scale-factor 0.25
+	--scale-factor 0.25  # see below
 ```
+
+
+The main params are obvious (lat/long/elevation/start & end dates).
+`--scale-factor` is a multiplier that accounts for the fact that a chamber
+cannot produce the quantity of light the sun does, and allows one to optimise
+spectra assuming that the sun was `scale_factor` times as bright. Defaults to
+0.5, which is about right for our high light chambers. It should be set to
+approximately `max(chamber par) / max(sun)`.
